@@ -1,0 +1,35 @@
+09-Jun-2015
+Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+
+Appunti sparsi su come usare il codice di Mauro
+
+GIT: https://github.com/dinardo/usercode/tree/master/B0Analysis/B0KstMuMu
+
+Alessio: /lustre/cmswork/boletti/Kstmumu/CMSSW_5_3_28/src/B0Analysis/B0KstMuMu/plugins/
+
+# WARNING
+./ComputeEfficiency Test2DEff 3 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt BIN 1
+si lamenta che ..//efficiency/H2Deff_OkTagJPsi_q2Bin_interp_1.txt non esiste. Come lo creo?
+Immagino sia l'istogramma originale in formato testo.
+
+# produce eff cosK vs cosL vs phi con fit parametrico
+./ComputeEfficiency Test2DEff 3 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY 1
+
+Devo prendere anche Utils.cc|h da src e interface e ricompilare!
+
+OK. Produce i plot 2D che aveva fatto alessio.
+
+Ora vorrei fare una RooPdf di 2 variabili e sbatterci dentro quegli istogrammi.
+Come faccio?
+1) devo salvare in qualche modo gli istogrammi
+2) devo creare una RooPDF opportuna
+3) devo leggere gli isto e usarli
+
+Una volta che l'ho fatto, voglio prendere le distribuzione GEN e confrontare GEN*eff con RECO
+
+1) distribuzioni GEN dalle ntuple
+2) leggere RooPDF
+3) riempire istogrammi con peso da RooPDF
+4) distribuzioni RECO
+
+Controlla closure test.
