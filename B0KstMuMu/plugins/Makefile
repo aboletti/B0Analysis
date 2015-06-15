@@ -1,4 +1,5 @@
 OS            := $(shell uname)
+.DEFAULT_GOAL := all
 
 ifeq ($(OS), Darwin)
 CXX           := clang++
@@ -51,3 +52,6 @@ ExtractYield: $(SOURCEDIR) $(INCLUDEDIR) ExtractYield.cc
 LOCALCC := $(wildcard *.cc)
 clean:
 	$(RM) $(LOCALCC:%.cc=%) Macros_C.*
+
+all: $(LOCALCC:%.cc=%)
+	
