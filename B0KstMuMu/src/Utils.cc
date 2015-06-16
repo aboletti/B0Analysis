@@ -1029,6 +1029,7 @@ void Utils::Put2DEffHistoq2Bin (std::string fileName, TH2D* histo)
       std::cout << "[Utils::Put2DEffHistoq2Bin]\tError opening file : " << fileName.c_str() << std::endl;
       exit (EXIT_FAILURE);
     }
+    std::cout << "[Utils::Put2DEffHistoq2Bin]\tSaving histo " << histo->GetName() << " to output file : " << fileName.c_str() << std::endl;
   
   
   // ##########################
