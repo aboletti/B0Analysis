@@ -2323,6 +2323,11 @@ void Test2DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
       hisFunc2Dorg[coup]->GetYaxis()->SetTitleOffset(1.25);
       hisFunc2Dorg[coup]->Draw("lego2 fb");
 
+      // These are the 2D histogram of the efficiency. Try to save them somewhere
+      TFile* effHistoFile=TFile::Open("effHisto2DFile.root","UPDATE");
+      hisFunc2Dorg[coup]->Write();
+      effHistoFile->Close();
+
 
       // #######################################################
       // # Read analytical OR binned (interpolated) efficiency #
