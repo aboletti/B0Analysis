@@ -15,6 +15,9 @@ Immagino sia l'istogramma originale in formato testo.
 # produce eff cosK vs cosL vs phi con fit parametrico
 ./ComputeEfficiency Test2DEff 3 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY 1
 
+# produce plot di eff integrando sulle variabili tranne una
+./ComputeEfficiency ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ReadBin 3
+
 Devo prendere anche Utils.cc|h da src e interface e ricompilare!
 
 OK. Produce i plot 2D che aveva fatto alessio.
@@ -33,3 +36,5 @@ Una volta che l'ho fatto, voglio prendere le distribuzione GEN e confrontare GEN
 4) distribuzioni RECO
 
 Controlla closure test.
+
+

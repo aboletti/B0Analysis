@@ -49,6 +49,9 @@ MakePlots: $(SOURCEDIR) $(INCLUDEDIR) $(ROOTFITINC) MakePlots.cc
 ExtractYield: $(SOURCEDIR) $(INCLUDEDIR) ExtractYield.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
+ClosureTest: $(SOURCEDIR) $(INCLUDEDIR) ClosureTest.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
 LOCALCC := $(wildcard *.cc)
 clean:
 	$(RM) $(LOCALCC:%.cc=%) Macros_C.*
