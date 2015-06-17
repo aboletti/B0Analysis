@@ -7,13 +7,15 @@ GIT: https://github.com/dinardo/usercode/tree/master/B0Analysis/B0KstMuMu
 
 Alessio: /lustre/cmswork/boletti/Kstmumu/CMSSW_5_3_28/src/B0Analysis/B0KstMuMu/plugins/
 
+export ANALYPATH=../
+
 # WARNING
 ./ComputeEfficiency Test2DEff 3 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt BIN 1
 si lamenta che ..//efficiency/H2Deff_OkTagJPsi_q2Bin_interp_1.txt non esiste. Come lo creo?
 Immagino sia l'istogramma originale in formato testo.
 
 # produce eff cosK vs cosL vs phi con fit parametrico
-./ComputeEfficiency Test2DEff 3 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY 1
+./ComputeEfficiency Test2DEff 1 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY 2
 
 # produce plot di eff integrando sulle variabili tranne una
 ./ComputeEfficiency ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ReadBin 3
@@ -24,9 +26,10 @@ OK. Produce i plot 2D che aveva fatto alessio.
 
 Ora vorrei fare una RooPdf di 2 variabili e sbatterci dentro quegli istogrammi.
 Come faccio?
-1) devo salvare in qualche modo gli istogrammi
-2) devo creare una RooPDF opportuna
-3) devo leggere gli isto e usarli
+1) devo salvare in qualche modo gli istogrammi OK
+2.1) devo creare una RooDataHist opportuna con bin giusto OK
+2.2) devo creare una RooPDF opportuna Working...
+3) devo leggere i RooPDF e usarli TODO
 
 Una volta che l'ho fatto, voglio prendere le distribuzione GEN e confrontare GEN*eff con RECO
 
@@ -36,5 +39,41 @@ Una volta che l'ho fatto, voglio prendere le distribuzione GEN e confrontare GEN
 4) distribuzioni RECO
 
 Controlla closure test.
+
+Codici segnale:
+
+  // ###############################################
+  // # ===> Define codes to identify MC type <===  #
+  // #                                             #
+  // # 1 = B0    --> K*0(K+pi-) mu+mu-             #
+  // # 2 = B0bar --> K*0bar(K-pi+) mu+mu-          #
+  // #                                             #
+  // # 3 = B0    --> K*0(K+pi-) J/psi(mu+mu-)      #
+  // # 4 = B0bar --> K*0bar(K-pi+) J/psi(mu+mu-)   #
+  // #                                             #
+  // # 5 = B0    --> K*0(K-pi+) psi(2S)(mu+mu-)    #
+  // # 6 = B0bar --> K*0bar(K-pi+) psi(2S)(mu+mu-) #
+  // ###############################################
+
+NB: se fai Get da un TFile e poi chiudi il TFile, allora scompare tutto (e l'histo e' vuoto, ma il puntatote e' non nullo) [R.Brun fottiti]
+
+NB2: il binning degli isto di eff non e' costante!
+Come si fa un Binning variabile in RooFit?
+
+E' complicato:
+Si deve prendere l'array dei bin (che si ottiene -come vector- da
+
+Utility->ReadAllBins(Utility->MakeAnalysisPATH(PARAMETERFILEIN).c_str(),&q2Bins,&cosThetaKBins,&cosThetaLBins,&phiBins,"goodTag"); 
+
+poi la converto in array:
+
+  double* cosThetaKBins_ = Utility->MakeBinning(&cosThetaKBins);
+etc
+
+poi creo un RooBinning
+  RooBinning cosThetaLBinning(cosThetaLBins.size()-1,cosThetaLBins_);
+
+e infine lo uso in createHistogram via Binning(cosThetaKBinning)
+
 
 
