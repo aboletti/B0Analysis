@@ -31,7 +31,7 @@ using namespace RooFit ;
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
-#define doInterpolation 4
+#define doInterpolation 1
 
 // ####################
 // # Global variables #
@@ -86,6 +86,25 @@ void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
   c3D->cd(4);
   TH3* hh24Pdf = (TH3*)xyzEff.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
   hh24Pdf->DrawCopy("box2 fp");
+
+  c3D->Print(Form("EffPlot3D_q2bin_%d.pdf",q2bin));
+
+  TCanvas* c3Dproj = new TCanvas("c3Dproj","3D Pdf projections",800,800) ;
+  c3Dproj->Divide(2,2);
+  c3Dproj->cd(1);
+  RooPlot* frameCtK=ctK.frame();
+  xyzEff.plotOn(frameCtK);
+  frameCtK->Draw();
+  c3Dproj->cd(2);
+  RooPlot* frameCtL=ctL.frame();
+  xyzEff.plotOn(frameCtL);
+  frameCtL->Draw();
+  c3Dproj->cd(3);
+  RooPlot* framePhi=phi.frame();
+  xyzEff.plotOn(framePhi);
+  framePhi->Draw();
+  c3Dproj->Print(Form("EffPlot3D_Projection_q2bin_%d.pdf",q2bin));
+
 }
 
 void plotHisto(unsigned int q2bin, const RooHistPdf& xyEff, const RooDataHist& xyHisto) {

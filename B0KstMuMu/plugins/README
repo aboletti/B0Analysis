@@ -108,5 +108,9 @@ Or:
 ./ClosureTest 0 1 1
 to produce all the pdf and save the plots for all bins in batch.
 
+Si puo' anche interpolare gli istogrammi, con un parametro che definisce il grado del polinomio di interpolazione 
 
+#define doInterpolation 1
+
+Aggiunto anche un primo test di pdf 3D, non sono sicuro vada bene, le "proiezioni" non e' sembrano giuste, per ora.
 
