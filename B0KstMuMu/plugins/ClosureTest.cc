@@ -30,6 +30,8 @@ using namespace RooFit ;
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
+#define doInterpolation kTRUE
+
 // ####################
 // # Global variables #
 // ####################
@@ -79,7 +81,7 @@ void plotHisto(unsigned int q2bin, const RooHistPdf& xyEff, const RooDataHist& x
   cOrig->cd(3);
   H2Deff_ctL_phi->DrawCopy("lego2 fp");
 
-  xyEff.Print();
+  //xyEff.Print();
   bool isCtK=false, isCtL=false, isPhi=false;
   if (xyEff.dependsOn(ctK)) isCtK=true;
   if (xyEff.dependsOn(ctL)) isCtL=true;
@@ -103,7 +105,7 @@ void plotHisto(unsigned int q2bin, const RooHistPdf& xyEff, const RooDataHist& x
   }
   else if (isCtK && isPhi) {
     h2Orig=H2Deff_ctK_phi;
-    phiBinning.Print();
+    //phiBinning.Print();
     hh21Histo = (TH2*)xyHisto.createHistogram("hh21Histo",ctK,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
     hh21Pdf = (TH2*)xyEff.createHistogram("hh21Pdf",ctK,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
     framex = ctK.frame(Title("cos#theta_{K} projection")) ;
@@ -157,7 +159,7 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
 
   RooArgList ctKctL(ctK,ctL);
   RooDataHist hist_ctKctL("hist_ctKctL","hist_ctKctL", ctKctL, Import(*H2Deff_ctK_ctL,kTRUE));
-  RooHistPdf pdf_ctKctL("pdf_ctKctL","pdf_ctKctL", ctKctL, hist_ctKctL, 0);
+  RooHistPdf pdf_ctKctL("pdf_ctKctL","pdf_ctKctL", ctKctL, hist_ctKctL, doInterpolation);
   //cout << "pdf_ctKctL( " << ctK.getVal() << "," << ctL.getVal() << " ) = " << pdf_ctKctL.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctKctL,hist_ctKctL);
   pdf2DOutputFile->cd();
@@ -165,7 +167,7 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
 
   RooArgList ctKphi(ctK,phi);
   RooDataHist hist_ctKphi("hist_ctKphi","hist_ctKphi", ctKphi, Import(*H2Deff_ctK_phi,kTRUE));
-  RooHistPdf pdf_ctKphi("pdf_ctKphi","pdf_ctKphi", ctKphi, hist_ctKphi, 0);
+  RooHistPdf pdf_ctKphi("pdf_ctKphi","pdf_ctKphi", ctKphi, hist_ctKphi, doInterpolation);
   //cout << "pdf_ctKphi( " << ctK.getVal() << "," << phi.getVal() << " ) = " << pdf_ctKphi.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctKphi,hist_ctKphi);
   pdf2DOutputFile->cd();
@@ -173,7 +175,7 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
 
   RooArgList ctLphi(ctL,phi);
   RooDataHist hist_ctLphi("hist_ctLphi","hist_ctLphi", ctLphi, Import(*H2Deff_ctL_phi,kTRUE));
-  RooHistPdf pdf_ctLphi("pdf_ctLphi","pdf_ctLphi", ctLphi, hist_ctLphi, 0);
+  RooHistPdf pdf_ctLphi("pdf_ctLphi","pdf_ctLphi", ctLphi, hist_ctLphi, doInterpolation);
   //cout << "pdf_ctLphi( " << ctL.getVal() << "," << phi.getVal() << " ) = " << pdf_ctLphi.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctLphi,hist_ctLphi);
   pdf2DOutputFile->cd();
@@ -381,9 +383,9 @@ int main(int argc, char** argv)
       // createHistPdfCtKPhi();
       // createHistPdfCtLPhi();
 
-      if (doBatch == true) {
+      if (doBatch) {
         cout << "\n[" << argv[0] << "::main]\t@@@ Setting batch mode @@@" << endl;
-        gROOT->SetBatch(true);
+        gROOT->SetBatch(doBatch);
       }
 
       // Open output file
@@ -400,6 +402,7 @@ int main(int argc, char** argv)
       else {
         // do only one q2 bin
         loadEffHisto(q2BinIndx);
+        createHistPdf(q2BinIndx,doPlot);
       }
 
       pdf2DOutputFile->Close();
