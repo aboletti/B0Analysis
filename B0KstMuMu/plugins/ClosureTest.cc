@@ -12,6 +12,7 @@
 #include "RooHistPdf.h"
 #include "RooRealVar.h"
 #include "RooDataHist.h"
+#include "RooProdPdf.h"
 #include "RooPlot.h"
 #include "RooBinning.h"
 using namespace RooFit ;
@@ -30,7 +31,7 @@ using namespace RooFit ;
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
-#define doInterpolation kTRUE
+#define doInterpolation 4
 
 // ####################
 // # Global variables #
@@ -51,6 +52,7 @@ RooRealVar phi("phi","#phi",-1.*TMath::Pi(),1.*TMath::Pi());
 RooArgSet ctKctL(ctK,ctL);
 RooArgSet ctKphi(ctK,phi);
 RooArgSet ctLphi(ctL,phi);
+RooArgSet ctKctLphi(ctK,ctL,phi);
 
 TFile* effHistoFile=0;
 TFile* pdf2DOutputFile;
@@ -67,6 +69,23 @@ void loadEffHisto(unsigned int q2bin) {
   H2Deff_ctK_ctL=(TH2D*) effHistoFile->Get(Form("H2Deff_0_q2Bin_Org_%d",q2bin));
   H2Deff_ctL_phi=(TH2D*) effHistoFile->Get(Form("H2Deff_1_q2Bin_Org_%d",q2bin));
   H2Deff_ctK_phi=(TH2D*) effHistoFile->Get(Form("H2Deff_2_q2Bin_Org_%d",q2bin));
+}
+
+void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
+  TCanvas* c3D = new TCanvas("c3D","3D Pdf",800,800) ;
+  c3D->Divide(2,2);
+  c3D->cd(1);
+  TH2* hh21Pdf = (TH2*)xyzEff.createHistogram("hh21Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)));
+  hh21Pdf->DrawCopy("lego2 fp");
+  c3D->cd(2);
+  TH2* hh22Pdf = (TH2*)xyzEff.createHistogram("hh22Pdf",ctL,Binning(cosThetaLBinning),YVar(phi,Binning(phiBinning)));
+  hh22Pdf->DrawCopy("lego2 fp");
+  c3D->cd(3);
+  TH2* hh23Pdf = (TH2*)xyzEff.createHistogram("hh23Pdf",ctL,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
+  hh23Pdf->DrawCopy("lego2 fp");
+  c3D->cd(4);
+  TH3* hh24Pdf = (TH3*)xyzEff.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
+  hh24Pdf->DrawCopy("box2 fp");
 }
 
 void plotHisto(unsigned int q2bin, const RooHistPdf& xyEff, const RooDataHist& xyHisto) {
@@ -133,17 +152,17 @@ void plotHisto(unsigned int q2bin, const RooHistPdf& xyEff, const RooDataHist& x
   c->cd(1);
   gPad->SetLeftMargin(0.15) ;
   framex->GetYaxis()->SetTitleOffset(1.4) ;
-  framex->Draw() ;
+  framex->DrawClone() ;
   c->cd(2);
   gPad->SetLeftMargin(0.15) ;
   framey->GetYaxis()->SetTitleOffset(1.4) ;
-  framey->Draw() ;
+  framey->DrawClone() ;
   c->cd(3);
-  h2Orig->Draw("lego2 fp");
+  h2Orig->DrawCopy("lego2 fp");
   c->cd(4);
-  hh21Histo->Draw("lego2 fp");
+  hh21Histo->DrawCopy("lego2 fp");
   c->cd(5);
-  hh21Pdf->Draw("lego2 fp");
+  hh21Pdf->DrawCopy("lego2 fp");
 
   c->Print(caName+Form("_q2bin_%d.pdf",q2bin));
 }
@@ -180,6 +199,13 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   if (doPlot) plotHisto(q2bin, pdf_ctLphi,hist_ctLphi);
   pdf2DOutputFile->cd();
   pdf_ctLphi.Write(Form("pdf_ctLphi_q2bin%d",q2bin));
+
+  // Try a 3d pdf
+  RooProdPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi,pdf_ctLphi));
+  pdf_ctKctLphi.Print();
+  pdf_ctKctLphi.Print("T");
+  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi);
+  pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 
 }
 
@@ -224,15 +250,6 @@ void createHistPdfCtKCtL() {
   c->cd(5);
   hh21Pdf->Draw("lego2 fp");
 
-  // TFile* pdf2DOutputFile = new TFile("pdf2DOutputFile.root", "RECREATE");
-  // histpdf1.Write();
-  // pdf2DOutputFile->Close();
-  // //effHistoFile->Close();
-  // TFile* pdf2D_in = new TFile("pdf2DOutputFile.root", "READ");
-  // RooHistPdf* histpdf2 = (RooHistPdf*) pdf2D_in->Get("histpdf1");
-  // TH2* hh22Pdf = (TH2*)histpdf2->createHistogram("hh22Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)));
-  // c->cd(6);
-  // hh22Pdf->Draw("lego2 fp");
   
 }
 
@@ -277,15 +294,6 @@ void createHistPdfCtKPhi() {
   c->cd(5);
   hh21Pdf->Draw("lego2 fp");
 
-  // TFile* pdf2DOutputFile = new TFile("pdf2DOutputFile.root", "RECREATE");
-  // histpdf1.Write();
-  // pdf2DOutputFile->Close();
-  // //effHistoFile->Close();
-  // TFile* pdf2D_in = new TFile("pdf2DOutputFile.root", "READ");
-  // RooHistPdf* histpdf2 = (RooHistPdf*) pdf2D_in->Get("histpdf1");
-  // TH2* hh22Pdf = (TH2*)histpdf2->createHistogram("hh22Pdf",ctK,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
-  // c->cd(6);
-  // hh22Pdf->Draw("lego2 fp");
   
 }
 
@@ -329,15 +337,6 @@ void createHistPdfCtLPhi() {
   c->cd(5);
   hh21Pdf->Draw("lego2 fp");
 
-  // TFile* pdf2DOutputFile = new TFile("pdf2DOutputFile.root", "RECREATE");
-  // histpdf1.Write();
-  // pdf2DOutputFile->Close();
-  // //effHistoFile->Close();
-  // TFile* pdf2D_in = new TFile("pdf2DOutputFile.root", "READ");
-  // RooHistPdf* histpdf2 = (RooHistPdf*) pdf2D_in->Get("histpdf1");
-  // TH2* hh22Pdf = (TH2*)histpdf2->createHistogram("hh22Pdf",ctK,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
-  // c->cd(6);
-  // hh22Pdf->Draw("lego2 fp");
   
 }
 
