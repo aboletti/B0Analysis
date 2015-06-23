@@ -76,4 +76,35 @@ poi creo un RooBinning
 e infine lo uso in createHistogram via Binning(cosThetaKBinning)
 
 
+Sono arrivato a fare i pdf (e i plot) per tutti i bin e per le tre 2d, ma qualcosa non torna in alcuni bin.
+Fai un loadHistoThetaLPhi per fare i plot indipendenti
+
+Ok, ho sistemato, c'era un po' di casino con il nome degli istogrammi. 
+Ho anche fatto uno script per creare tutti gli histo di partenza (per tutti i bin)
+ComputeEfficiencyAllBin.sh
+
+Mi basta solo salvare i RooPdf in un file singolo (con nomi sensati)
+Ok fatto.
+
+HOW to use it:
+
+1) create the 2d Eff histo
+
+Set batch for ComputeEfficiency.cc
+#define SETBATCH        true
+
+Run script
+./ComputeEfficiencyAllBin.sh
+Now you have a root file with all 2D eff histo saved effHisto2DFile.root
+
+Create the RooHistPdf from the histo by running
+./ClosureTest <q2Bin> <do plot> <batch run>
+eg:
+./ClosureTest 1 1 
+to produce the pdf and look at the histos and pdf for Q2 bin==1
+Or:
+./ClosureTest 0 1 1
+to produce all the pdf and save the plots for all bins in batch.
+
+
 
