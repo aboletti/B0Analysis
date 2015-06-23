@@ -89,14 +89,16 @@ Ok fatto.
 HOW to use it:
 
 1) create the 2d Eff histo
-
 Set batch for ComputeEfficiency.cc
 #define SETBATCH        true
+Compile 
+make ComputeEfficiency
 
 Run script
 ./ComputeEfficiencyAllBin.sh
 Now you have a root file with all 2D eff histo saved effHisto2DFile.root
 
+2) creat the RooHitsPdf from 2D Eff
 Create the RooHistPdf from the histo by running
 ./ClosureTest <q2Bin> <do plot> <batch run>
 eg:
