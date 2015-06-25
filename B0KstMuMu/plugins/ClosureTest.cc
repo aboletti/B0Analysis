@@ -83,8 +83,8 @@ void loadEffHisto(unsigned int q2bin) {
 
 }
 
-void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
-  TCanvas* c3D = new TCanvas("c3D","3D Pdf",800,800) ;
+void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff, char* suffix="") {
+  TCanvas* c3D = new TCanvas(Form("c3D%s",suffix),Form("3D Pdf %s",suffix),800,800) ;
   c3D->Divide(4,2);
   c3D->cd(1);
   TH2* hh21Pdf = (TH2*)xyzEff.createHistogram("hh21Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)));
@@ -112,7 +112,7 @@ void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
   xyzEff.plotOn(framePhi);
   framePhi->DrawClone();
 
-  c3D->Print(Form("EffPlot3D_q2bin_%d.pdf",q2bin));
+  c3D->Print(Form("EffPlot3D_q2bin_%d%s.pdf",q2bin,suffix));
 
 }
 
@@ -228,7 +228,6 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   pdf2DOutputFile->cd();
   pdf_ctLphi.Write(Form("pdf_ctLphi_q2bin%d",q2bin));
 
-  return;
   // Try a 3d pdf
   //
   // actual 3D pdf =2d()*2d()*2d()
@@ -258,7 +257,7 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
 
   // pdf_ctKctLphi.Print();
   // pdf_ctKctLphi.Print("T");
-  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi);
+  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi,"_From2D");
   pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 
 }
