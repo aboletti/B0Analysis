@@ -87,7 +87,7 @@ using std::make_pair;
 // "/efficiency/EffRndGenAnalyFilesSign_JPsi_Psi2S/Efficiency_RndGen.txt"
 // # OR #
 // "/efficiency/EffRndGenBinFilesSign_JPsi_Psi2S/Efficiency_RndGen.txt"
-#define SETBATCH        false
+#define SETBATCH        true
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
@@ -2625,7 +2625,7 @@ void Test3DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
   // # Read binned efficiency #
   // ##########################
   myString.clear(); myString.str("");
-  myString << "Histo_q2Bin_" << q2BinIndx;
+  myString << "hisFunc3D_" << q2BinIndx;
   TH3D* hisFunc3D = Utility->Get3DEffHistoq2Bin(myString.str(),q2Bins,cosThetaKBins,cosThetaLBins,phiBins,q2BinIndx,myEff);
   Zmin = hisFunc3D->GetMinimum();
   hisFunc3D->SetMarkerStyle(20);
@@ -2638,9 +2638,9 @@ void Test3DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
   // ##############################
   // # Read analytical efficiency #
   // ##############################
-  Utility->ReadAnalyticalEff(Utility->MakeAnalysisPATH(PARAMETERFILEIN).c_str(),q2Bins,cosThetaKBins,cosThetaLBins,phiBins,&effFuncs3D,"effFuncs3D",Utility->ParFileBlockN("analyEffokTag"));
-  EffFunc3D = effFuncs3D[q2BinIndx];
-  Utility->EffMinValue3D(cosThetaKBins,cosThetaLBins,phiBins,EffFunc3D);
+  // Utility->ReadAnalyticalEff(Utility->MakeAnalysisPATH(PARAMETERFILEIN).c_str(),q2Bins,cosThetaKBins,cosThetaLBins,phiBins,&effFuncs3D,"effFuncs3D",Utility->ParFileBlockN("analyEffokTag"));
+  // EffFunc3D = effFuncs3D[q2BinIndx];
+  // Utility->EffMinValue3D(cosThetaKBins,cosThetaLBins,phiBins,EffFunc3D);
 
   effHis3D = Utility->Get3DEffHistoq2Bin("effHis3D",q2Bins,cosThetaKBins,cosThetaLBins,phiBins,q2BinIndx,myEff);
   effHis3D->SetMarkerStyle(22);
@@ -2649,9 +2649,9 @@ void Test3DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
     for (unsigned int k = 0; k < cosThetaLBins->size()-1; k++)
       for (unsigned int l = 0; l < phiBins->size()-1; l++)
 	{
-	  coeff = EffFunc3D->Eval((cosThetaKBins->operator[](j)+cosThetaKBins->operator[](j+1))/2.,
-				  (cosThetaLBins->operator[](k)+cosThetaLBins->operator[](k+1))/2.,
-				  (phiBins->operator[](l)+phiBins->operator[](l+1))/2.);
+        // coeff = EffFunc3D->Eval((cosThetaKBins->operator[](j)+cosThetaKBins->operator[](j+1))/2.,
+        //                   (cosThetaLBins->operator[](k)+cosThetaLBins->operator[](k+1))/2.,
+        //                   (phiBins->operator[](l)+phiBins->operator[](l+1))/2.);
 	  
 	  effHis3D->SetBinContent(j+1,k+1,l+1,coeff);
 	  effHis3D->SetBinError(j+1,k+1,l+1,0.0);
@@ -2733,6 +2733,12 @@ void Test3DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
       myString << "Test2DEff" << "_" << q2BinIndx << ".pdf";
       cEff->Print(myString.str().c_str());
     }
+
+  // Save histos
+  TFile* outfile=TFile::Open("effHisto3DFile.root","UPDATE");
+  hisFunc3D->Write(Form("hisFunc3D_%d",q2BinIndx));
+  effHis3D->Write(Form("effHis3D_%d",q2BinIndx));
+  outfile->Close();
 
   delete effHis3D;
 }

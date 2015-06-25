@@ -114,3 +114,22 @@ Si puo' anche interpolare gli istogrammi, con un parametro che definisce il grad
 
 Aggiunto anche un primo test di pdf 3D, non sono sicuro vada bene, le "proiezioni" non e' sembrano giuste, per ora.
 
+Confermo che non sono giuste. Il problema e' che se uso e(thK,thL,phi)=e(thK,thL)*e(thK,phi)*e(thL,phi) la dipendenza da thK (per esempio) e' il prodotto della prima e PER la seconda e (che dipendono entrambe da thK), mentre la terza viene integrata. Il che vuol dire che, se per ipotesi le due sono uguali, la e_3d=e_2d^2 , il che cambia drasticamente le distribuzioni dell'efficenza.
+Quindi non va bene.
+
+Da provare a creare direttamente un histo 3D dell'efficenza, e provare ad usare direttamente quello come pdf (con o senza interpolazione) e andare aguardare le projezioni in 2 o 1 variable per vedere che le cose funzionano.
+
+TODO:
+1) creare gli isto 3D direttamente in ComputeEfficiency.cc DONE
+./ComputeEfficiency Test3DEff 1 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY 2
+
+(note Test3DEff)
+
+2) salvarli DONE
+effHisto3DFile.root
+
+3) aprirli in ClosureTest e creare una pdf a partire da quegli istogrammi DONE
+
+4) confrontarli con le projezioni 2d e 1d che ho gia'.
+
+

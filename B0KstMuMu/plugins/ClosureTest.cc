@@ -24,6 +24,7 @@ using namespace RooFit ;
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TH2D.h"
+#include "TH3D.h"
 #include "TMath.h"
 
 // ####################
@@ -33,7 +34,7 @@ using namespace RooFit ;
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
-#define doInterpolation 1
+#define doInterpolation 3
 
 // ####################
 // # Global variables #
@@ -56,26 +57,35 @@ RooArgSet ctKphi(ctK,phi);
 RooArgSet ctLphi(ctL,phi);
 RooArgSet ctKctLphi(ctK,ctL,phi);
 
-TFile* effHistoFile=0;
+TFile* effHistoFile2d=0;
+TFile* effHistoFile3d=0;
 TFile* pdf2DOutputFile;
 TH2D* H2Deff_ctK_ctL;
 TH2D* H2Deff_ctL_phi;
 TH2D* H2Deff_ctK_phi;
+TH3D* H3Deff_ctK_ctL_phi;
 
 void loadEffHisto(unsigned int q2bin) {
-  if (!effHistoFile) { 
-    cout << "Loading effHistoFile.root " << endl;
-    effHistoFile=TFile::Open("effHisto2DFile.root","READ");
+  if (!effHistoFile2d) { 
+    cout << "Loading effHisto2DFile.root " << endl;
+    effHistoFile2d=TFile::Open("effHisto2DFile.root","READ");
   }
 
-  H2Deff_ctK_ctL=(TH2D*) effHistoFile->Get(Form("H2Deff_0_q2Bin_Org_%d",q2bin));
-  H2Deff_ctL_phi=(TH2D*) effHistoFile->Get(Form("H2Deff_1_q2Bin_Org_%d",q2bin));
-  H2Deff_ctK_phi=(TH2D*) effHistoFile->Get(Form("H2Deff_2_q2Bin_Org_%d",q2bin));
+  H2Deff_ctK_ctL=(TH2D*) effHistoFile2d->Get(Form("H2Deff_0_q2Bin_Org_%d",q2bin));
+  H2Deff_ctL_phi=(TH2D*) effHistoFile2d->Get(Form("H2Deff_1_q2Bin_Org_%d",q2bin));
+  H2Deff_ctK_phi=(TH2D*) effHistoFile2d->Get(Form("H2Deff_2_q2Bin_Org_%d",q2bin));
+
+  if (!effHistoFile3d) { 
+    cout << "Loading effHisto3DFile.root.root " << endl;
+    effHistoFile3d=TFile::Open("effHisto3DFile.root","READ");
+  }
+  H3Deff_ctK_ctL_phi=(TH3D*) effHistoFile3d->Get(Form("hisFunc3D_%d",q2bin));
+
 }
 
 void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
   TCanvas* c3D = new TCanvas("c3D","3D Pdf",800,800) ;
-  c3D->Divide(2,2);
+  c3D->Divide(4,2);
   c3D->cd(1);
   TH2* hh21Pdf = (TH2*)xyzEff.createHistogram("hh21Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)));
   hh21Pdf->DrawCopy("lego2 fp");
@@ -89,23 +99,20 @@ void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
   TH3* hh24Pdf = (TH3*)xyzEff.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
   hh24Pdf->DrawCopy("box2 fp");
 
-  c3D->Print(Form("EffPlot3D_q2bin_%d.pdf",q2bin));
-
-  TCanvas* c3Dproj = new TCanvas("c3Dproj","3D Pdf projections",800,800) ;
-  c3Dproj->Divide(2,2);
-  c3Dproj->cd(1);
+  c3D->cd(5);
   RooPlot* frameCtK=ctK.frame();
   xyzEff.plotOn(frameCtK);
   frameCtK->DrawClone();
-  c3Dproj->cd(2);
+  c3D->cd(6);
   RooPlot* frameCtL=ctL.frame();
   xyzEff.plotOn(frameCtL);
   frameCtL->DrawClone();
-  c3Dproj->cd(3);
+  c3D->cd(7);
   RooPlot* framePhi=phi.frame();
   xyzEff.plotOn(framePhi);
   framePhi->DrawClone();
-  c3Dproj->Print(Form("EffPlot3D_Projection_q2bin_%d.pdf",q2bin));
+
+  c3D->Print(Form("EffPlot3D_q2bin_%d.pdf",q2bin));
 
 }
 
@@ -221,6 +228,7 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   pdf2DOutputFile->cd();
   pdf_ctLphi.Write(Form("pdf_ctLphi_q2bin%d",q2bin));
 
+  return;
   // Try a 3d pdf
   //
   // actual 3D pdf =2d()*2d()*2d()
@@ -253,6 +261,28 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi);
   pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 
+}
+
+void createHist3DPdf(unsigned int q2bin, bool doPlot=false) {
+  cout << "createHist3DPdf " << q2bin << endl;
+
+  RooArgList ctKctLphi(ctK,ctL,phi);
+  RooDataHist hist_ctKctLphi("hist_ctKctLphi","hist_ctKctLphi", ctKctLphi, Import(*H3Deff_ctK_ctL_phi,kTRUE));
+  RooHistPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf_ctKctLphi", ctKctLphi, hist_ctKctLphi, doInterpolation);
+  // TCanvas* ccc = new TCanvas("ccc","ccc",800,800) ;
+  // ccc->Divide(2,2);
+  // ccc->cd(1);
+  // H3Deff_ctK_ctL_phi->Draw("box");
+  // ccc->cd(2);
+  // TH3* hh24Hist = (TH3*)hist_ctKctLphi.createHistogram("hh24Hist",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
+  // hh24Hist->Draw("box");
+  // ccc->cd(3);
+  // TH3* hh24Pdf = (TH3*)pdf_ctKctLphi.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
+  // hh24Pdf->Draw("box");
+
+  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi);
+  pdf2DOutputFile->cd();
+  pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 }
 
 void createHistPdfCtKCtL() {
@@ -442,12 +472,14 @@ int main(int argc, char** argv)
           // Open input file
           loadEffHisto(q2BinIndx);
           createHistPdf(q2BinIndx,doPlot);
+          createHist3DPdf(q2BinIndx,doPlot);
         }
       }
       else {
         // do only one q2 bin
         loadEffHisto(q2BinIndx);
         createHistPdf(q2BinIndx,doPlot);
+        createHist3DPdf(q2BinIndx,doPlot);
       }
 
       pdf2DOutputFile->Close();
