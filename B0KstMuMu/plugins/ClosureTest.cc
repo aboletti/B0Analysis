@@ -13,6 +13,7 @@
 #include "RooRealVar.h"
 #include "RooDataHist.h"
 #include "RooUniform.h"
+#include "RooGaussian.h"
 #include "RooProdPdf.h"
 #include "RooPlot.h"
 #include "RooBinning.h"
@@ -221,13 +222,27 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   pdf_ctLphi.Write(Form("pdf_ctLphi_q2bin%d",q2bin));
 
   // Try a 3d pdf
-  RooUniform pdf_ctKphi_uniform("pdf_ctKphi_uniform","pdf uniform cos#theta_{K},#phi",RooArgSet(ctK,phi));
-  RooUniform pdf_ctLphi_uniform("pdf_ctLphi_uniform","pdf uniform cos#theta_{K},#phi",RooArgSet(ctL,phi));
-
+  //
   // actual 3D pdf =2d()*2d()*2d()
   RooProdPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi,pdf_ctLphi));
   
   // 3D=2d()*uniform()*uniform()
+
+  // 1D uniform * gaussian
+  // RooRealVar mean("mean","mean",0);
+  // RooRealVar sigma("sigma","#sigma",1);
+  // RooGaussian pdf_ctL_gauss("pdf_ctL_gauss","pdf uniform #ctL",ctL,mean,sigma);
+  // RooGaussian pdf_ctK_gauss("pdf_ctK_gauss","pdf uniform #ctK",ctK,mean,sigma);
+  // RooUniform pdf_phi_uniform("pdf_phi_uniform","pdf uniform #phi",RooArgSet(phi));
+  // RooProdPdf pdf_ctLphi_gauss_uniform("pdf_ctLphi_gauss_uniform","pdf gauss*uniform #ctL#phi",RooArgSet(pdf_ctL_gauss,pdf_phi_uniform));
+  // RooProdPdf pdf_ctKphi_gauss_uniform("pdf_ctKphi_gauss_uniform","pdf gauss*uniform #ctK#phi",RooArgSet(pdf_ctK_gauss,pdf_phi_uniform));
+
+  // RooProdPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi_gauss_uniform,pdf_ctLphi_gauss_uniform));
+
+  // 2D uniform
+  //RooUniform pdf_ctKphi_uniform("pdf_ctKphi_uniform","pdf uniform cos#theta_{K},#phi",RooArgSet(ctK,phi));
+  //RooUniform pdf_ctLphi_uniform("pdf_ctLphi_uniform","pdf uniform cos#theta_{K},#phi",RooArgSet(ctL,phi));
+  
   //RooProdPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi_uniform,pdf_ctLphi_uniform));
 
   // 3D=2d()*2d()*uniform()
