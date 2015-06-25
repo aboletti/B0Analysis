@@ -81,7 +81,7 @@ void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff) {
   TH2* hh22Pdf = (TH2*)xyzEff.createHistogram("hh22Pdf",ctL,Binning(cosThetaLBinning),YVar(phi,Binning(phiBinning)));
   hh22Pdf->DrawCopy("lego2 fp");
   c3D->cd(3);
-  TH2* hh23Pdf = (TH2*)xyzEff.createHistogram("hh23Pdf",ctL,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
+  TH2* hh23Pdf = (TH2*)xyzEff.createHistogram("hh23Pdf",ctK,Binning(cosThetaKBinning),YVar(phi,Binning(phiBinning)));
   hh23Pdf->DrawCopy("lego2 fp");
   c3D->cd(4);
   TH3* hh24Pdf = (TH3*)xyzEff.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
