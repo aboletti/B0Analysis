@@ -34,7 +34,7 @@ using namespace RooFit ;
 #define PARAMETERFILEIN "/python/ParameterFile.txt"
 #define ordinateRange   1e-2
 
-#define doInterpolation 3
+#define doInterpolation 0
 
 // ####################
 // # Global variables #
@@ -65,6 +65,18 @@ TH2D* H2Deff_ctL_phi;
 TH2D* H2Deff_ctK_phi;
 TH3D* H3Deff_ctK_ctL_phi;
 
+RooHistPdf* pdf_ctKctLphi;
+
+B0KstMuMuSingleCandTreeContent* NTupleIn_reco;
+B0KstMuMuSingleCandTreeContent* NTupleIn_gen;
+
+static const int qbins=8
+TH1F* h_reco_pt[qbins];
+TH1F* h_gen_pt[qbins];
+TH1F* h_reco_pta[qbins];
+TH1F* h_gen_pta[qbins];
+TCanvas* c_ctest[qbins];
+
 void loadEffHisto(unsigned int q2bin) {
   if (!effHistoFile2d) { 
     cout << "Loading effHisto2DFile.root " << endl;
@@ -83,8 +95,40 @@ void loadEffHisto(unsigned int q2bin) {
 
 }
 
+void plot3D(unsigned int q2bin, const TH3* h3d, TString suffix="") {
+  TCanvas* c3D = new TCanvas("c"+(TString)h3d->GetName()+Form("_%i",q2bin)+suffix,(TString)h3d->GetName()+Form(" bin%i",q2bin)+" "+suffix,800,800) ;
+  c3D->Divide(2,2);
+  TH2F* h2d1 = new TH2F("h"+(TString)h3d->GetName()+"1"+suffix,"h"+(TString)h3d->GetName()+"1"+suffix,cosThetaKBinning.numBoundaries()-1,cosThetaKBins_,cosThetaLBinning.numBoundaries()-1,cosThetaLBins_);
+  TH2F* h2d2 = new TH2F("h"+(TString)h3d->GetName()+"2"+suffix,"h"+(TString)h3d->GetName()+"2"+suffix,cosThetaKBinning.numBoundaries()-1,cosThetaKBins_,cosThetaLBinning.numBoundaries()-1,cosThetaLBins_);
+  TH2F* h2d3 = new TH2F("h"+(TString)h3d->GetName()+"3"+suffix,"h"+(TString)h3d->GetName()+"3"+suffix,cosThetaKBinning.numBoundaries()-1,cosThetaKBins_,cosThetaLBinning.numBoundaries()-1,cosThetaLBins_);
+  TH2F* h2d4 = new TH2F("h"+(TString)h3d->GetName()+"4"+suffix,"h"+(TString)h3d->GetName()+"4"+suffix,cosThetaKBinning.numBoundaries()-1,cosThetaKBins_,cosThetaLBinning.numBoundaries()-1,cosThetaLBins_);
+  for (int i=1; i<cosThetaKBinning.numBoundaries(); i++) for (int j=1; j<cosThetaLBinning.numBoundaries(); j++) {
+      h2d1->SetBinContent(i, j, h3d->GetBinContent(i, j, 1) );
+      h2d2->SetBinContent(i, j, h3d->GetBinContent(i, j, 2) );
+      h2d3->SetBinContent(i, j, h3d->GetBinContent(i, j, 3) );
+      h2d4->SetBinContent(i, j, h3d->GetBinContent(i, j, 4) );
+      h2d1->SetBinError(i, j, h3d->GetBinError(i, j, 1) );
+      h2d2->SetBinError(i, j, h3d->GetBinError(i, j, 2) );
+      h2d3->SetBinError(i, j, h3d->GetBinError(i, j, 3) );
+      h2d4->SetBinError(i, j, h3d->GetBinError(i, j, 4) );
+    }
+  c3D->cd(1);
+  h2d1->DrawCopy("lego2 fp");
+  c3D->cd(2);
+  h2d2->DrawCopy("lego2 fp");
+  c3D->cd(3);
+  h2d3->DrawCopy("lego2 fp");
+  c3D->cd(4);
+  h2d4->DrawCopy("lego2 fp");
+  c3D->Print((TString)c3D->GetName()+".pdf");
+}
+
+void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
+  plot3D(q2bin, (TH3*)xyzEff.createHistogram("h3d",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning))), suffix);
+}
+
 void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff, char* suffix="") {
-  TCanvas* c3D = new TCanvas(Form("c3D%s",suffix),Form("3D Pdf %s",suffix),800,800) ;
+  TCanvas* c3D = new TCanvas(Form("c3D%s",suffix),Form("3D Pdf %s",suffix),1600,800) ;
   c3D->Divide(4,2);
   c3D->cd(1);
   TH2* hh21Pdf = (TH2*)xyzEff.createHistogram("hh21Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)));
@@ -113,6 +157,18 @@ void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff, char* suffix="") {
   framePhi->DrawClone();
 
   c3D->Print(Form("EffPlot3D_q2bin_%d%s.pdf",q2bin,suffix));
+
+  TCanvas* cOrig3D = new TCanvas("cOrig3D","Original 3D histo",800,800) ;
+  cOrig3D->Divide(2,2);
+  cOrig3D->cd(1);
+  //H3Deff_ctK_ctL_phi->DoProject2D("H3Deff_2D_ctK_ctL","H3Deff_2D_ctK_ctL",H3Deff_ctK_ctL_phi->GetXaxis(),H3Deff_ctK_ctL_phi->GetYaxis(),1,1,0,0)->DrawCopy("lego2 fp");
+  H3Deff_ctK_ctL_phi->Project3D("yx")->DrawCopy("lego2 fp");
+  cOrig3D->cd(2);
+  //H3Deff_ctK_ctL_phi->DoProject2D("H3Deff_2D_ctK_phi","H3Deff_2D_ctK_phi",H3Deff_ctK_ctL_phi->GetXaxis(),H3Deff_ctK_ctL_phi->GetZaxis(),1,1,0,0)->DrawCopy("lego2 fp");
+  H3Deff_ctK_ctL_phi->Project3D("zx")->DrawCopy("lego2 fp");
+  cOrig3D->cd(3);
+  //H3Deff_ctK_ctL_phi->DoProject2D("H3Deff_2D_ctL_phi","H3Deff_2D_ctL_phi",H3Deff_ctK_ctL_phi->GetYaxis(),H3Deff_ctK_ctL_phi->GetZaxis(),1,1,0,0)->DrawCopy("lego2 fp");
+  H3Deff_ctK_ctL_phi->Project3D("zy")->DrawCopy("lego2 fp");
 
 }
 
@@ -257,7 +313,8 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
 
   // pdf_ctKctLphi.Print();
   // pdf_ctKctLphi.Print("T");
-  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi,"_From2D");
+  TString str = "_From2D";
+  if (doPlot) plot3D/*Histo*/(q2bin,pdf_ctKctLphi,str);
   pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 
 }
@@ -267,7 +324,7 @@ void createHist3DPdf(unsigned int q2bin, bool doPlot=false) {
 
   RooArgList ctKctLphi(ctK,ctL,phi);
   RooDataHist hist_ctKctLphi("hist_ctKctLphi","hist_ctKctLphi", ctKctLphi, Import(*H3Deff_ctK_ctL_phi,kTRUE));
-  RooHistPdf pdf_ctKctLphi("pdf_ctKctLphi","pdf_ctKctLphi", ctKctLphi, hist_ctKctLphi, doInterpolation);
+  pdf_ctKctLphi = new RooHistPdf("pdf_ctKctLphi","pdf_ctKctLphi", ctKctLphi, hist_ctKctLphi, doInterpolation);
   // TCanvas* ccc = new TCanvas("ccc","ccc",800,800) ;
   // ccc->Divide(2,2);
   // ccc->cd(1);
@@ -279,9 +336,9 @@ void createHist3DPdf(unsigned int q2bin, bool doPlot=false) {
   // TH3* hh24Pdf = (TH3*)pdf_ctKctLphi.createHistogram("hh24Pdf",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning)));
   // hh24Pdf->Draw("box");
 
-  if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi);
+  if (doPlot) plot3D/*Histo*/(q2bin,&pdf_ctKctLphi);
   pdf2DOutputFile->cd();
-  pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
+  pdf_ctKctLphi->Write(Form("pdf_ctKctLphi_q2bin%d",q2bin));
 }
 
 void createHistPdfCtKCtL() {
@@ -433,6 +490,59 @@ void loadBinning() {
 
 }
 
+void initHisto(int q2bin) {
+  h_gen_pt [q2bin-1] = new TH1F(Form("h_gen_pt%i",q2bin-1) ,Form("h_gen_pt%i",q2bin-1) ,100,0.,100.);
+  h_reco_pt[q2bin-1] = new TH1F(Form("h_reco_pt%i",q2bin-1),Form("h_reco_pt%i",q2bin-1),100,0.,100.);
+  h_gen_eta [q2bin-1] = new TH1F(Form("h_gen_eta%i",q2bin-1) ,Form("h_gen_eta%i",q2bin-1) ,100,-3.,3.);
+  h_reco_eta[q2bin-1] = new TH1F(Form("h_reco_eta%i",q2bin-1),Form("h_reco_eta%i",q2bin-1),100,-3.,3.);
+  if (doPlot) c_ctest[q2bin-1] = new TCanvas(Form("c_ctest%i",q2bin-1),Form("c_ctest%i",q2bin-1),1600,800);
+}
+
+void fillHistoGen(RooAbsPdf* Eff, int q2bin, double cosThetaK, double cosThetaL, double phi, float pt, float eta) {
+  double weight = Eff->GetVal(cosThetaK,cosThetaL,phi);
+  h_gen_pt [q2bin-1]->Fill(pt , weight);
+  h_gen_eta[q2bin-1]->Fill(eta, weight);
+}
+
+void fillHistoReco(int q2bin, float pt, float eta) {
+  h_reco_pt [q2bin-1]->Fill(pt );
+  h_reco_eta[q2bin-1]->Fill(eta);
+}
+
+void plotTestHisto(int q2bin) {
+  c_ctest[q2bin-1]->cd(1);
+  h_reco_pt[q2bin-1]->DrawCopy("");
+  //h_gen_pt [q2bin-1]->DrawCopy("same PE");
+  c_ctest[q2bin-1]->cd(2);
+  h_reco_pt[q2bin-1]->DrawCopy("");
+  //h_gen_pt [q2bin-1]->DrawCopy("same PE");
+  c_ctest[q2bin-1]->SaveAs(Form("closureTest_plot_bin%i.pdf",q2bin));
+}
+
+void performTest(RooAbsPdf* Eff, int q2bin, int nev_reco=0, int nev_gen=0) {
+  //dcap://t2-srm-02.lnl.infn.it/pnfs/lnl.infn.it/data/cms//store/mc/Phys14DR/TT_Tune4C_13TeV-pythia8-tauola/MINIAODSIM/PU20bx25_tsg_PHYS14_25_V1-v1/00000/007B37D4-8B70-E411-BC2D-0025905A6066.root
+  // srm://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/Data2012/
+  TFile* NtplFileIn_reco = new TFile("", "READ");
+  TTree* theTreeIn_reco  = (TTree*) NtplFileIn_reco->Get("B0KstMuMu/B0KstMuMuNTuple");
+  NTupleIn_reco = new B0KstMuMuSingleCandTreeContent();
+  NTupleIn_reco->Init();
+  NTupleIn_reco->ClearNTuple();
+  NTupleIn_reco->SetBranchAddresses(theTreeIn_reco);
+  int nEntries_reco = theTreeIn_reco->GetEntries();
+  cout << "\n[ClosureTest::performTest]\t@@@ Total number of reco events in the tree: " << nEntries_reco << " @@@" << endl;
+  if (nev_reco>0 && nev_reco < nEntries_reco) nEntries_reco = nev_reco;
+  cout << "\n[ClosureTest::performTest]\t@@@ Number of reco events to be used: " << nEntries_reco << " @@@" << endl;
+  initHisto(int q2bin);
+  
+  for (int entry = 0; entry < nEntries_reco; entry++) {
+    theTreeIn_reco->GetEntry(entry);
+    if (!NTupleIn_reco->rightFlavorTag) continue;
+    fillHistoReco(q2bin, NTupleIn_reco->B0pT, NTupleIn_reco->B0Eta);
+  }
+  
+  if (doPlot) plotTestHisto(q2bin);
+}
+
 int main(int argc, char** argv)
 {
   if (argc > 0)
@@ -470,15 +580,17 @@ int main(int argc, char** argv)
         for (q2BinIndx=1; q2BinIndx<9; ++q2BinIndx) {
           // Open input file
           loadEffHisto(q2BinIndx);
-          createHistPdf(q2BinIndx,doPlot);
+          //createHistPdf(q2BinIndx,doPlot);
           createHist3DPdf(q2BinIndx,doPlot);
+	  performTest(pdf_ctKctLphi, q2BinIndx, 1000, 1000)
         }
       }
       else {
         // do only one q2 bin
         loadEffHisto(q2BinIndx);
-        createHistPdf(q2BinIndx,doPlot);
+        //createHistPdf(q2BinIndx,doPlot);
         createHist3DPdf(q2BinIndx,doPlot);
+	performTest(pdf_ctKctLphi, q2BinIndx, 1000, 1000)
       }
 
       pdf2DOutputFile->Close();

@@ -2286,8 +2286,15 @@ void Test2DEfficiency (vector<double>* q2Bins, vector<double>* cosThetaKBins, ve
   TF2* effFunc2D[3]     = {NULL,NULL,NULL};
   TH2D* hisFunc2Dnew[3] = {NULL,NULL,NULL};
   TH2D* hisFunc2Dorg[3];
+  //TH3D* hisFunc3D;
   // ###################
 
+  /*myString.clear(); myString.str("");
+  myString << "H3Deff_q2Bin_" << q2BinIndx;
+  hisFunc3D = Utility->Get3DEffHistoq2Bin (myString.str(),q2Bins,cosThetaKBins,cosThetaLBins,phiBins,q2BinIndx,myEff);
+  TFile* effHistoFile1=TFile::Open("effHisto3DFile.root","UPDATE");
+  hisFunc3D->Write();
+  effHistoFile1->Close();*/
 
   TCanvas* cEff[3];
   int cv_cnt[3] = {3,3,3};
