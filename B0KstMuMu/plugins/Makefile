@@ -52,6 +52,9 @@ ExtractYield: $(SOURCEDIR) $(INCLUDEDIR) ExtractYield.cc
 ClosureTest: $(SOURCEDIR) $(INCLUDEDIR) ClosureTest.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
+ComputeEfficiency3D: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiency3D.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(ROOTFLAGS) $(INCLUDES) $(SOURCES) $@.cc
+
 LOCALCC := $(wildcard *.cc)
 clean:
 	$(RM) $(LOCALCC:%.cc=%) Macros_C.*
