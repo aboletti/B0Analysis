@@ -132,4 +132,10 @@ effHisto3DFile.root
 
 4) confrontarli con le projezioni 2d e 1d che ho gia'.
 
+ComputeEfficiency Make
+prende tre tree, che sono del tipo SingleCand, e che sono, rispettivamente, Gen No filter, Reco no filter, reco.
+Per esempio queste:
+
+./ComputeEfficiency Make dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/ForEfficiency/B0ToKstMuMu_GEN_NoFilter_MC_NTuples_addGENvars.root dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/ForEfficiency/B0ToKstMuMu_MC_NTuple_addGENvars.root dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/SingleCand/singleCand_B0ToKstMuMu_MC_NTuple.root ./pippo.txt 1
+
 
