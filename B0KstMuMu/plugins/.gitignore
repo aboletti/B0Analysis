@@ -1,0 +1,12 @@
+*~
+*.pdf
+*.root
+.gitignore
+AddVarsToCandidates
+B0KstMuMuScanCuts
+ClosureTest
+ComputeEfficiency
+ComputeEfficiency3D
+ExtractYield
+MakePlots
+SingleCandB0KstMuMu

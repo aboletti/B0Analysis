@@ -207,6 +207,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   NTuple->ClearNTuple();
   NTuple->SetBranchAddresses(theTree);
   nEntries = theTree->GetEntries();
+  nEntries/=100;
   cout << "\n[ComputeEfficiency::ComputeEfficiency]\t@@@ Computing efficiency type " << type;
   if      (type == 1) cout << " (before filter) @@@" << endl;
   else if (type == 2) cout << " (after filter) @@@" << endl;
@@ -215,84 +216,87 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   cout << "[ComputeEfficiency::ComputeEfficiency]\t@@@ Total number of events in the tree: " << nEntries << " @@@" << endl;
 
 
+  int evPassing =0;
   for (int entry = 0; entry < nEntries; entry++)
+  {
+    theTree->GetEntry(entry);
+
+    if ((NTuple->B0pT > Utility->GetSeleCut("B0pT")) && (fabs(NTuple->B0Eta) < Utility->GetSeleCut("B0Eta")) &&
+
+        ((NTuple->genSignal == SignalType || NTuple->genSignal == SignalType+1)) &&
+
+        ((type == 1 || type == 3) ||
+
+         ((type == 2) &&
+          (sqrt(NTuple->genMumPx*NTuple->genMumPx + NTuple->genMumPy*NTuple->genMumPy)   > Utility->GetPreCut("MinMupT")) &&
+          (sqrt(NTuple->genMupPx*NTuple->genMupPx + NTuple->genMupPy*NTuple->genMupPy)   > Utility->GetPreCut("MinMupT")) &&
+          (fabs(Utility->computeEta(NTuple->genMumPx,NTuple->genMumPy,NTuple->genMumPz)) < Utility->GetPreCut("MuEta"))   &&
+          (fabs(Utility->computeEta(NTuple->genMupPx,NTuple->genMupPy,NTuple->genMupPz)) < Utility->GetPreCut("MuEta")))  ||
+
+         ((type == 4) && (NTuple->truthMatchSignal->at(0) == true) && (NTuple->rightFlavorTag == Utility->RIGHTflavorTAG) &&
+          (NTuple->B0MassArb > Utility->B0Mass - atof(Utility->GetGenericParam("B0MassIntervalLeft").c_str()))            &&
+          (NTuple->B0MassArb < Utility->B0Mass + atof(Utility->GetGenericParam("B0MassIntervalRight").c_str()))           &&
+
+          ((((SignalType == Utility->B0ToKstMuMu)  || (SignalType == Utility->B0ToKstMuMu+1))  && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"rejectPsi",true) == true)) ||
+           (((SignalType == Utility->B0ToJPsiKst)  || (SignalType == Utility->B0ToJPsiKst+1))  && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"keepJpsi")       == true)) ||
+           (((SignalType == Utility->B0ToPsi2SKst) || (SignalType == Utility->B0ToPsi2SKst+1)) && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"keepPsiP")       == true))))))
     {
-      theTree->GetEntry(entry);
+      evPassing++;
+      mumuq2 = NTuple->mumuMass->at(0)*NTuple->mumuMass->at(0);
 
-      if ((NTuple->B0pT > Utility->GetSeleCut("B0pT")) && (fabs(NTuple->B0Eta) < Utility->GetSeleCut("B0Eta")) &&
-	  
-	  ((NTuple->genSignal == SignalType || NTuple->genSignal == SignalType+1)) &&
-	  
-	  ((type == 1 || type == 3) ||
-	   
-	   ((type == 2) &&
-	    (sqrt(NTuple->genMumPx*NTuple->genMumPx + NTuple->genMumPy*NTuple->genMumPy)   > Utility->GetPreCut("MinMupT")) &&
-	    (sqrt(NTuple->genMupPx*NTuple->genMupPx + NTuple->genMupPy*NTuple->genMupPy)   > Utility->GetPreCut("MinMupT")) &&
-	    (fabs(Utility->computeEta(NTuple->genMumPx,NTuple->genMumPy,NTuple->genMumPz)) < Utility->GetPreCut("MuEta"))   &&
-	    (fabs(Utility->computeEta(NTuple->genMupPx,NTuple->genMupPy,NTuple->genMupPz)) < Utility->GetPreCut("MuEta")))  ||
+      if ((type == 4) && (NTuple->rightFlavorTag == false))
+      {
+        cosThetaK  = - NTuple->CosThetaKArb;
+        cosThetaMu = - NTuple->CosThetaMuArb;
+      }
+      else
+      {
+        cosThetaK  = NTuple->CosThetaKArb;
+        cosThetaMu = NTuple->CosThetaMuArb;
+      }
+      phiKstMuMuPlane = NTuple->PhiKstMuMuPlaneArb;
 
-	   ((type == 4) && (NTuple->truthMatchSignal->at(0) == true) && (NTuple->rightFlavorTag == Utility->RIGHTflavorTAG) &&
-	    (NTuple->B0MassArb > Utility->B0Mass - atof(Utility->GetGenericParam("B0MassIntervalLeft").c_str()))            &&
-	    (NTuple->B0MassArb < Utility->B0Mass + atof(Utility->GetGenericParam("B0MassIntervalRight").c_str()))           &&
+      mumuq2BinIndx          = Utility->SearchBin(mumuq2,q2Bins);
+      cosThetaKBinIndx       = Utility->SearchBin(cosThetaK,cosThetaKBins);
+      cosThetaMuBinIndx      = Utility->SearchBin(cosThetaMu,cosThetaLBins);
+      phiKstMuMuPlaneBinIndx = Utility->SearchBin(phiKstMuMuPlane,phiBins);
 
-	    ((((SignalType == Utility->B0ToKstMuMu)  || (SignalType == Utility->B0ToKstMuMu+1))  && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"rejectPsi",true) == true)) ||
-	     (((SignalType == Utility->B0ToJPsiKst)  || (SignalType == Utility->B0ToJPsiKst+1))  && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"keepJpsi")       == true)) ||
-	     (((SignalType == Utility->B0ToPsi2SKst) || (SignalType == Utility->B0ToPsi2SKst+1)) && (Utility->PsiRejection(NTuple->B0MassArb,NTuple->mumuMass->at(0),NTuple->mumuMassE->at(0),"keepPsiP")       == true))))))
-	{
-	  mumuq2 = NTuple->mumuMass->at(0)*NTuple->mumuMass->at(0);
+      if ((mumuq2BinIndx != -1) && (cosThetaKBinIndx != -1) && (cosThetaMuBinIndx != -1) && (phiKstMuMuPlaneBinIndx != -1))
+      {
+        if ((type == 1) || (type == 2))
+          // ##################################################
+          // # No event-weight for muon acceptance efficiency #
+          // ##################################################
+          Vector[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaKBinIndx*(q2Bins->size()-1) +
+            mumuq2BinIndx]++;
+        else if ((type == 3) || (type == 4))
+        {
+          // ########################################
+          // # Add event-weight for reco efficiency #
+          // ########################################
+          Vector[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaKBinIndx*(q2Bins->size()-1) +
+            mumuq2BinIndx] +=
+            NTuple->evWeight;
 
-	  if ((type == 4) && (NTuple->rightFlavorTag == false))
-	    {
-	      cosThetaK  = - NTuple->CosThetaKArb;
-	      cosThetaMu = - NTuple->CosThetaMuArb;
-	    }
-	  else
-	    {
-	      cosThetaK  = NTuple->CosThetaKArb;
-	      cosThetaMu = NTuple->CosThetaMuArb;
-	    }
-	  phiKstMuMuPlane = NTuple->PhiKstMuMuPlaneArb;
+          Counter[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaKBinIndx*(q2Bins->size()-1) +
+            mumuq2BinIndx]++;
 
-	  mumuq2BinIndx          = Utility->SearchBin(mumuq2,q2Bins);
-	  cosThetaKBinIndx       = Utility->SearchBin(cosThetaK,cosThetaKBins);
-	  cosThetaMuBinIndx      = Utility->SearchBin(cosThetaMu,cosThetaLBins);
-	  phiKstMuMuPlaneBinIndx = Utility->SearchBin(phiKstMuMuPlane,phiBins);
-
-	  if ((mumuq2BinIndx != -1) && (cosThetaKBinIndx != -1) && (cosThetaMuBinIndx != -1) && (phiKstMuMuPlaneBinIndx != -1))
-	    {
-	      if ((type == 1) || (type == 2))
-		// ##################################################
-		// # No event-weight for muon acceptance efficiency #
-		// ##################################################
-		Vector[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-		       cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-		       cosThetaKBinIndx*(q2Bins->size()-1) +
-		       mumuq2BinIndx]++;
-	      else if ((type == 3) || (type == 4))
-		{
-		  // ########################################
-		  // # Add event-weight for reco efficiency #
-		  // ########################################
-		  Vector[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-		  	 cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-		  	 cosThetaKBinIndx*(q2Bins->size()-1) +
-		  	 mumuq2BinIndx] +=
-		    NTuple->evWeight;
-	  
-		  Counter[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-			  cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-			  cosThetaKBinIndx*(q2Bins->size()-1) +
-			  mumuq2BinIndx]++;
-
-		  VectorErr2Weig[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-				 cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
-				 cosThetaKBinIndx*(q2Bins->size()-1) +
-				 mumuq2BinIndx] +=
-		    NTuple->evWeightE2;
-		}
-	    }
-	}
+          VectorErr2Weig[phiKstMuMuPlaneBinIndx*(cosThetaLBins->size()-1)*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaMuBinIndx*(cosThetaKBins->size()-1)*(q2Bins->size()-1) +
+            cosThetaKBinIndx*(q2Bins->size()-1) +
+            mumuq2BinIndx] +=
+            NTuple->evWeightE2;
+        }
+      }
     }
+  }
+  cout << "[ComputeEfficiency::ComputeEfficiency]\t@@@ Number of events passing selection: " << evPassing << " @@@" << endl;
 
 
   for (unsigned int i = 0; i < q2Bins->size()-1; i++)
