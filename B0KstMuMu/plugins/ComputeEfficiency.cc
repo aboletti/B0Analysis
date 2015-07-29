@@ -2798,17 +2798,17 @@ int main (int argc, char** argv)
 	  TApplication theApp ("Applications", &argc, argv);
 
       
-	  TFile* NtplFileGenCandidatesNoFilter = new TFile(fileNameGenCandidatesNoFilter.c_str(), "READ");
+	  TFile* NtplFileGenCandidatesNoFilter = TFile::Open(fileNameGenCandidatesNoFilter.c_str(), "READ");
 	  theTreeGenCandidatesNoFilter         = (TTree*) NtplFileGenCandidatesNoFilter->Get("B0KstMuMu/B0KstMuMuNTuple");
 	  NTupleGenCandidatesNoFilter          = new B0KstMuMuSingleCandTreeContent();
 	  NTupleGenCandidatesNoFilter->Init();
 
-	  TFile* NtplFileRecoCandidates = new TFile(fileNameRecoCandidates.c_str(), "READ");
+	  TFile* NtplFileRecoCandidates = TFile::Open(fileNameRecoCandidates.c_str(), "READ");
 	  theTreeRecoCandidates         = (TTree*) NtplFileRecoCandidates->Get("B0KstMuMu/B0KstMuMuNTuple");
 	  NTupleRecoCandidates          = new B0KstMuMuSingleCandTreeContent();
 	  NTupleRecoCandidates->Init();
 
-	  TFile* NtplFileSingleCand = new TFile(fileNameSingleCand.c_str(), "READ");
+	  TFile* NtplFileSingleCand = TFile::Open(fileNameSingleCand.c_str(), "READ");
 	  theTreeSingleCand         = (TTree*) NtplFileSingleCand->Get("B0KstMuMu/B0KstMuMuNTuple");
 	  NTupleSingleCand          = new B0KstMuMuSingleCandTreeContent();
 	  NTupleSingleCand->Init();
