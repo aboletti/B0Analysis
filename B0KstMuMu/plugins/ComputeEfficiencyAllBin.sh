@@ -26,4 +26,5 @@ do
   ./ComputeEfficiency ${what} 1 ../efficiency/Efficiency4D_B0ToKstMuMu_GoodTag.txt ANALY ${q2bin}
 done
 
+./ComputeEfficiency3D 0 1 1
 

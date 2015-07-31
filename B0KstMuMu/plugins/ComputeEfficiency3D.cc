@@ -111,7 +111,7 @@ void plot3D(unsigned int q2bin, const TH3* h3d, TString suffix="") {
 }
 
 void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
-  plot3D(q2bin, (TH3*)xyzEff.createHistogram("h3d",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaKBinning)),ZVar(phi,Binning(phiBinning))), suffix);
+  plot3D(q2bin, (TH3*)xyzEff.createHistogram("h3d",ctK,Binning(cosThetaKBinning),YVar(ctL,Binning(cosThetaLBinning)),ZVar(phi,Binning(phiBinning))), suffix);
 }
 
 void plot3DHisto(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
@@ -247,39 +247,35 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   // phi.setVal(0.1);
 
   RooArgList ctKctL(ctK,ctL);
-  cout<<0<<endl;
   RooDataHist hist_ctKctL("hist_ctKctL","hist_ctKctL", ctKctL, Import(*H2Deff_ctK_ctL,kTRUE));
-  cout<<0<<endl;
-  RooHistPdf pdf_ctKctL(Form("pdf_ctKctL_q2bin%d",q2bin),Form("pdf_ctKctL_q2bin%d",q2bin), ctKctL, hist_ctKctL, doInterpolation);
-  cout<<0<<endl;
-  //cout << "pdf_ctKctL( " << ctK.getVal() << "," << ctL.getVal() << " ) = " << pdf_ctKctL.getVal() << endl;
+  RooHistPdf pdf_ctKctL(Form("pdf_ctKctL_q2bin%d",q2bin),Form("#cos#theta_{K},#cos#theta_{L} q2bin=%d",q2bin), ctKctL, hist_ctKctL, doInterpolation);
+  cout << "pdf_ctKctL( " << ctK.getVal() << "," << ctL.getVal() << " ) = " << pdf_ctKctL.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctKctL,hist_ctKctL);
   pdf2DOutputFile->cd();
-  cout<<0<<endl;
-  pdf_ctKctL.Write(Form("pdf_ctKctL_q2bin%d",q2bin));
-  cout<<0<<endl;
+  pdf2DOutputFile->ls();
+  pdf_ctKctL.Write();
 
   RooArgList ctKphi(ctK,phi);
-  cout<<0<<endl;
   RooDataHist hist_ctKphi("hist_ctKphi","hist_ctKphi", ctKphi, Import(*H2Deff_ctK_phi,kTRUE));
-  RooHistPdf pdf_ctKphi(Form("pdf_ctKphi_q2bin%d",q2bin),Form("pdf_ctKphi_q2bin%d",q2bin), ctKphi, hist_ctKphi, doInterpolation);
+  RooHistPdf pdf_ctKphi(Form("pdf_ctKphi_q2bin%d",q2bin),Form("#cos#theta_{K},#phi q2bin=%d",q2bin), ctKphi, hist_ctKphi, doInterpolation);
   //cout << "pdf_ctKphi( " << ctK.getVal() << "," << phi.getVal() << " ) = " << pdf_ctKphi.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctKphi,hist_ctKphi);
   pdf2DOutputFile->cd();
-  pdf_ctKphi.Write(Form("pdf_ctKphi_q2bin%d",q2bin));
+  pdf_ctKphi.Write();
 
   RooArgList ctLphi(ctL,phi);
   RooDataHist hist_ctLphi("hist_ctLphi","hist_ctLphi", ctLphi, Import(*H2Deff_ctL_phi,kTRUE));
-  RooHistPdf pdf_ctLphi(Form("pdf_ctLphi_q2bin%d",q2bin),Form("pdf_ctLphi_q2bin%d",q2bin), ctLphi, hist_ctLphi, doInterpolation);
+  RooHistPdf pdf_ctLphi(Form("pdf_ctLphi_q2bin%d",q2bin),Form("#cos#theta_{L},#phi q2bin=%d",q2bin), ctLphi, hist_ctLphi, doInterpolation);
   //cout << "pdf_ctLphi( " << ctL.getVal() << "," << phi.getVal() << " ) = " << pdf_ctLphi.getVal() << endl;
   if (doPlot) plotHisto(q2bin, pdf_ctLphi,hist_ctLphi);
   pdf2DOutputFile->cd();
-  pdf_ctLphi.Write(Form("pdf_ctLphi_q2bin%d",q2bin));
+  pdf_ctLphi.Write();
 
   // Try a 3d pdf
   //
   // actual 3D pdf =2d()*2d()*2d()
   RooProdPdf pdf_ctKctLphi(Form("pdf_ctKctLphi_2D_q2bin%d",q2bin),"pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi,pdf_ctLphi));
+  //RooProdPdf pdf_ctKctLphi(Form("pdf_ctKctLphi_2D_q2bin%d",q2bin),"pdf cos#theta_{K},cos#theta_{L},#phi",RooArgSet(pdf_ctKctL,pdf_ctKphi,pdf_ctLphi));
   
   // 3D=2d()*uniform()*uniform()
 
@@ -308,7 +304,8 @@ void createHistPdf(unsigned int q2bin, bool doPlot=false) {
   TString str = "_From2D";
   if (doPlot) plot3D(q2bin,pdf_ctKctLphi,str);
   if (doPlot) plot3DHisto(q2bin,pdf_ctKctLphi,str);
-  pdf_ctKctLphi.Write(Form("pdf_ctKctLphi_2D_q2bin%d",q2bin));
+  cout << "porco caxxo" << endl;
+  pdf_ctKctLphi.Write();
 
 }
 
@@ -317,7 +314,7 @@ void createHist3DPdf(unsigned int q2bin, bool doPlot=false) {
 
   RooArgList ctKctLphi(ctK,ctL,phi);
   RooDataHist hist_ctKctLphi("hist_ctKctLphi","hist_ctKctLphi", ctKctLphi, Import(*H3Deff_ctK_ctL_phi,kTRUE));
-  RooAbsPdf* pdf_ctKctLphi = new RooHistPdf("pdf_ctKctLphi","pdf_ctKctLphi", ctKctLphi, hist_ctKctLphi, 0);
+  RooAbsPdf* pdf_ctKctLphi = new RooHistPdf(Form("pdf_ctKctLphi_q2bin%d",q2bin),Form("pdf_ctKctLphi_q2bin%d",q2bin), ctKctLphi, hist_ctKctLphi, doInterpolation);
   // TCanvas* ccc = new TCanvas("ccc","ccc",800,800) ;
   // ccc->Divide(2,2);
   // ccc->cd(1);
@@ -514,7 +511,7 @@ int main(int argc, char** argv)
       }
 
       // Open output file
-      pdf2DOutputFile = new TFile("eff3DOutputFile_2.root", "RECREATE");
+      pdf2DOutputFile = new TFile("eff3DOutputFile.root", "RECREATE");
 
       // do all q2Bins at once
       if (q2BinIndx==0) {

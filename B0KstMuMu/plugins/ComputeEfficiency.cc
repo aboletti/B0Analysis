@@ -207,7 +207,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   NTuple->ClearNTuple();
   NTuple->SetBranchAddresses(theTree);
   nEntries = theTree->GetEntries();
-  nEntries/=100;
+  //nEntries/=100;
   cout << "\n[ComputeEfficiency::ComputeEfficiency]\t@@@ Computing efficiency type " << type;
   if      (type == 1) cout << " (before filter) @@@" << endl;
   else if (type == 2) cout << " (after filter) @@@" << endl;
@@ -217,8 +217,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
 
 
   int evPassing =0;
-  for (int entry = 0; entry < nEntries; entry++)
-  {
+  for (int entry = 0; entry < nEntries; entry++) {
     theTree->GetEntry(entry);
 
     if ((NTuple->B0pT > Utility->GetSeleCut("B0pT")) && (fabs(NTuple->B0Eta) < Utility->GetSeleCut("B0Eta")) &&
@@ -243,7 +242,6 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
     {
       evPassing++;
       mumuq2 = NTuple->mumuMass->at(0)*NTuple->mumuMass->at(0);
-
       if ((type == 4) && (NTuple->rightFlavorTag == false))
       {
         cosThetaK  = - NTuple->CosThetaKArb;

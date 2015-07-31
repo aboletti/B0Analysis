@@ -49,11 +49,14 @@ MakePlots: $(SOURCEDIR) $(INCLUDEDIR) $(ROOTFITINC) MakePlots.cc
 ExtractYield: $(SOURCEDIR) $(INCLUDEDIR) ExtractYield.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
-ClosureTest: $(SOURCEDIR) $(INCLUDEDIR) ClosureTest.cc
-	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
-
 ComputeEfficiency3D: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiency3D.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(ROOTFLAGS) $(INCLUDES) $(SOURCES) $@.cc
+
+ComputeEfficiencyKE: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ClosureTest: $(SOURCEDIR) $(INCLUDEDIR) ClosureTest.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
 LOCALCC := $(wildcard *.cc)
 clean:
