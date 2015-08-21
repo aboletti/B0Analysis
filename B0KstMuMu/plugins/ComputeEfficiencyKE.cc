@@ -25,6 +25,7 @@
 #include <TFitResult.h>
 #include <Math/Functor.h>
 
+#include <RooNumIntConfig.h>
 #include <RooGenericPdf.h>
 #include "RooRealVar.h"
 #include "RooDataSet.h"
@@ -362,7 +363,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
 
   RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(CosThetaK,CosThetaMu, PhiKstMuMuPlane));
 
-  for (int entry = 0; entry < nEntries/100; entry++)
+  for (int entry = 0; entry < nEntries; entry++)
   {
     theTree->GetEntry(entry);
 
@@ -517,6 +518,7 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   MyRatioPdf* ratioGen  = new MyRatioPdf(*ele_KEpdf->at(1),*ele_KEpdf->at(0));
   ROOT::Math::Functor* effGenFunctor = new ROOT::Math::Functor(*ratioGen,ratioGen->ndim());
   EffGenPDF             = new RooFunctorPdfBinding("EffGenPDF","EffGenPDF",*effGenFunctor,ratioGen->vars());
+  if (doPlot)  plot3D(q2BinIndx, *EffGenPDF, "_effGen");
   cout << " Done" << endl;
 
   cout << "Reco " ;
@@ -528,27 +530,28 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   MyRatioPdf* ratioReco  = new MyRatioPdf(*ele_KEpdf->at(3),*ele_KEpdf->at(2));
   ROOT::Math::Functor* effRecoFunctor = new ROOT::Math::Functor(*ratioReco,ratioReco->ndim());
   EffRecoPDF             = new RooFunctorPdfBinding("EffRecoPDF","EffRecoPDF",*effRecoFunctor,ratioReco->vars());
+  if (doPlot)  plot3D(q2BinIndx, *EffRecoPDF, "_effReco");
   cout << "Done " << endl;
 
-  // Create a new empty workspace
-  RooWorkspace *w = new RooWorkspace("w","workspace") ;
+  // // Create a new empty workspace
+  // RooWorkspace *w = new RooWorkspace("w","workspace") ;
 
-  // Import pdf
-  for (int i=0; i<4; ++i) w->import(*ele_KEpdf->at(i));
-  w->import(*EffGenPDF);
-  w->import(*EffRecoPDF);
+  // // Import pdf
+  // for (int i=0; i<4; ++i) w->import(*ele_KEpdf->at(i));
+  // w->import(*EffGenPDF);
+  // w->import(*EffRecoPDF);
 
-  // Print workspace contents
-  w->Print() ;
+  // // Print workspace contents
+  // w->Print() ;
 
-  w->writeToFile("RooWorkspace.root") ;
+  // w->writeToFile("RooWorkspace.root") ;
 
-  TFile* fileOut = new TFile(fileNameOutput.c_str(), "UPDATE");
-  fileOut->cd();
-  for (int i=0; i<4; i++) ele_KEpdf->at(i)->Write(Form("term%iPdf_q2bin%i",i,q2BinIndx));
-  EffGenPDF->Write(Form("effGenPdf_q2bin%i",q2BinIndx));
-  EffRecoPDF->Write(Form("effRecoPdf_q2bin%i",q2BinIndx));
-  fileOut->Close();
+  // TFile* fileOut = new TFile(fileNameOutput.c_str(), "UPDATE");
+  // fileOut->cd();
+  // for (int i=0; i<4; i++) ele_KEpdf->at(i)->Write(Form("term%iPdf_q2bin%i",i,q2BinIndx));
+  // EffGenPDF->Write(Form("effGenPdf_q2bin%i",q2BinIndx));
+  // EffRecoPDF->Write(Form("effRecoPdf_q2bin%i",q2BinIndx));
+  // fileOut->Close();
 
   if (doPlot) for (int i=0; i<4; i++) plot3D(q2BinIndx, *ele_KEpdf->at(i), Form("_term%i",i));
 
@@ -564,10 +567,11 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   // ROOT::Math::Functor* effFunctor = new ROOT::Math::Functor(*myeffpdf,myeffpdf->ndim());
   // EffPDF             = new RooFunctorPdfBinding("EffPDF","EffPDF",*effFunctor,myeffpdf->vars());
 
-  fileOut = new TFile(fileNameOutput.c_str(), "UPDATE");
-  fileOut->cd();
-  EffPDF->Write(Form("effPdf_q2bin%i",q2BinIndx));
-  fileOut->Close();
+  // fileOut = new TFile(fileNameOutput.c_str(), "UPDATE");
+  // fileOut->cd();
+  // EffPDF->Write(Form("effPdf_q2bin%i",q2BinIndx));
+  // fileOut->Close();
+
   if (doPlot)  plot3D(q2BinIndx, *EffPDF, "_eff");
   EffPDF->Delete();
   delete ele_KEpdf;
@@ -583,6 +587,9 @@ int main(int argc, char** argv)
 
     TApplication theApp ("Applications", &argc, argv);
     Utility = new Utils(false);
+    CosThetaK.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
+    CosThetaMu.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
+    PhiKstMuMuPlane.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
 
     unsigned int q2BinIndx=0;
     bool doPlot=false;
