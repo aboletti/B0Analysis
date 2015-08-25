@@ -2,7 +2,7 @@
 // # Program to compute the efficiency for the B0 --> K*0 mu+ mu- analysis #
 // # in bins of dimuon q^2, cos(theta_K), cos(theta_l), and phi            #
 // #########################################################################
-// # Author: Mauro Dinardo                                                 #
+// # Author: Stefano Lacaprara - Alessio Boletti
 // #########################################################################
 
 #include <TROOT.h>
@@ -38,6 +38,8 @@
 #include <RooFunctorBinding.h>
 #include "RooBinning.h"
 #include "RooWorkspace.h"
+#include "RooDataHist.h"
+#include "RooHistPdf.h"
 
 #include <cmath>
 #include <iostream>
@@ -145,9 +147,9 @@ double* phiBins_ ;
 RooBinning cosThetaLBinning;
 RooBinning cosThetaKBinning;
 RooBinning phiBinning;
-RooRealVar CosThetaK("CosThetaK","CosThetaK",-1,1);
-RooRealVar CosThetaMu("CosThetaMu","CosThetaMu",-1,1) ;
-RooRealVar PhiKstMuMuPlane("PhiKstMuMuPlane","PhiKstMuMuPlane",-TMath::Pi(),TMath::Pi()) ;
+RooRealVar CosThetaK("CosThetaK","cos#theta_{K}",-1,1);
+RooRealVar CosThetaMu("CosThetaMu","cos#theta_{#mu}",-1,1) ;
+RooRealVar PhiKstMuMuPlane("PhiKstMuMuPlane","#phi_{K*#mu#mu}",-TMath::Pi(),TMath::Pi()) ;
 
 // #######################
 // # Function Definition #
@@ -363,7 +365,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
 
   RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(CosThetaK,CosThetaMu, PhiKstMuMuPlane));
 
-  for (int entry = 0; entry < nEntries; entry++)
+  for (int entry = 0; entry < nEntries/100; entry++)
   {
     theTree->GetEntry(entry);
 
@@ -423,7 +425,46 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   }
 
   cout << "[ComputeEfficiency::ComputeEfficiency]\t@@@ Total number of passing events: " << Counter[type-1] << " @@@" << endl;
-  ele_KEpdf->at(type-1) = new RooNDKeysPdf(Form("ele_KEpdf%i",type-1), Form("ele_KEpdf%i",type-1), RooArgList(CosThetaK,CosThetaMu, PhiKstMuMuPlane), KEpdf_data, "");
+  ele_KEpdf->at(type-1) = new RooNDKeysPdf(Form("ele_KEpdf%i",type-1), Form("ele_KEpdf%i",type-1), RooArgList(CosThetaK,CosThetaMu, PhiKstMuMuPlane), KEpdf_data, "M");
+}
+
+void plot3D(unsigned int q2bin, const TH3* xyzEff, TString suffix="") {
+  // TH3* h3dfull = (TH3*)xyzEff.createHistogram("hKE",CosThetaK,Binning(20),YVar(CosThetaMu,Binning(20)),ZVar(PhiKstMuMuPlane,Binning(20)));
+  // TH2F* h2d1full = new TH2F("h"+(TString)h3dfull->GetName()+"1"+suffix,"histo "+(TString)h3dfull->GetName()+" bin_{#phi}=1 full:cos#theta_{K}::cos#theta_{L}"+suffix,20,-1.,1.,20,-1.,1.);
+  // h3dfull->GetZaxis()->SetRange(1,5);
+  // h2d1full=(TH2F*) h3dfull->Project3D("z");
+
+  // TCanvas* c3Dfull = new TCanvas("c3Dfull","c3Dfull",800,800) ;
+  // c3Dfull->Divide(2,2);
+  // c3Dfull->cd(1);
+  // TH2* hhcKcLpdf = (TH2*)xyzEff.createHistogram("hhcKcLpdf",CosThetaK,Binning(cosThetaKBinning),YVar(CosThetaMu,Binning(cosThetaLBinning)));
+  // hhcKcLpdf->DrawCopy("lego2 fp");
+  TH1* hh_pdf3xy = xyzEff->Project3D("xy");
+  TH1* hh_pdf3xz = xyzEff->Project3D("xz");
+  TH1* hh_pdf3yz = xyzEff->Project3D("yz");
+  hh_pdf3xy->SetLineColor(kBlue) ;
+  hh_pdf3xz->SetLineColor(kBlue) ;
+  hh_pdf3yz->SetLineColor(kBlue) ;
+
+  TCanvas* c = new TCanvas("Plot3d",Form("Plot3D_%s_%s_q2bin%i",xyzEff->GetName(),suffix.Data(),q2bin),800,800) ;
+  c->Divide(2,2);
+  c->cd(1);
+  gPad->SetLeftMargin(0.15) ;
+  hh_pdf3xy->GetXaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3xy->GetYaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3xy->DrawCopy("surf fp") ;
+  c->cd(2);
+  gPad->SetLeftMargin(0.15) ;
+  hh_pdf3xz->GetXaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3xz->GetZaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3xz->DrawCopy("surf fp") ;
+  c->cd(3);
+  gPad->SetLeftMargin(0.15) ;
+  hh_pdf3yz->GetYaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3yz->GetZaxis()->SetTitleOffset(1.2) ;
+  hh_pdf3yz->DrawCopy("surf fp") ;
+  c->Draw();
+  c->Print("c"+(TString)c->GetTitle()+".pdf");
 }
 
 void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
@@ -504,34 +545,96 @@ void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
   // c3D->Print((TString)c3D->GetName()+".pdf");
 }
 
+
 void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   cout << "computeEffForOneBin " << q2BinIndx << endl;
   // Open input file
   ele_KEpdf = new std::vector<RooNDKeysPdf*> (4);
+  TFile* fileOut = new TFile(fileNameOutput.c_str(), "RECREATE");
 
   cout << "Gen " ;
+  int nbin=40;
+  fileOut->cd();
+
   // numerator and denominator for Gen ratio
   ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 1 ,atoi(SignalType.c_str()));
-  ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 2 ,atoi(SignalType.c_str()));
+  TH3* h3genDen = (TH3*)(ele_KEpdf->at(0))->createHistogram("h3genDen",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+  h3genDen->Scale(Counter[0]*1./h3genDen->Integral());
+  h3genDen->Write(Form("h3genDen_q2bin%i",q2BinIndx));
 
-  // Compute ratio for Gen efficiency
-  MyRatioPdf* ratioGen  = new MyRatioPdf(*ele_KEpdf->at(1),*ele_KEpdf->at(0));
-  ROOT::Math::Functor* effGenFunctor = new ROOT::Math::Functor(*ratioGen,ratioGen->ndim());
-  EffGenPDF             = new RooFunctorPdfBinding("EffGenPDF","EffGenPDF",*effGenFunctor,ratioGen->vars());
-  if (doPlot)  plot3D(q2BinIndx, *EffGenPDF, "_effGen");
+  // // Create HistPdf from this TH3
+  // RooArgList ctKctLPhi(CosThetaK,CosThetaMu, PhiKstMuMuPlane);
+  // RooDataHist rh3genDen("rh3genDen","rh3genDen", ctKctLPhi, Import(*h3genDen,kTRUE));
+  // RooHistPdf pdf_genDen(Form("pdf_genDen_q2bin%d",q2BinIndx),Form("pdf_genDen q2bin=%d",q2BinIndx), ctKctLPhi, rh3genDen, 0);
+  // pdf_genDen.Write(Form("pdf_genDen_q2bin%d",q2BinIndx));
+
+  ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 2 ,atoi(SignalType.c_str()));
+  TH3* h3genNum = (TH3*)(*ele_KEpdf->at(1)).createHistogram("h3genNum",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+  h3genNum->Scale(Counter[1]*1./h3genNum->Integral());
+  h3genNum->Write(Form("h3genNum_q2bin%i",q2BinIndx));
+
+  // RooDataHist rh3genNum("rh3genNum","rh3genNum", ctKctLPhi, Import(*h3genNum,kTRUE));
+  // RooHistPdf pdf_genNum(Form("pdf_genNum_q2bin%d",q2BinIndx),Form("pdf_genNum q2bin=%d",q2BinIndx), ctKctLPhi, rh3genNum, 0);
+  // pdf_genNum.Write(Form("pdf_genNum_q2bin%d",q2BinIndx));
+
+  TH3* h3genEff = (TH3*)h3genNum->Clone("h3genEff");
+  h3genEff->Divide(h3genDen);
+  //h3genEff->Scale((Counter[1]*1./Counter[0])/h3genEff->Integral());
+  cout << "Gen: N=" << Counter[1] << "/D=" << Counter[0] << "=" << h3genEff->Integral() << endl;
+  h3genEff->Write(Form("h3genEff_q2bin%i",q2BinIndx));
+
+  // RooDataHist rh3genEff("rh3genEff","rh3genEff", ctKctLPhi, Import(*h3genEff,kTRUE));
+  // RooHistPdf pdf_genEff(Form("pdf_genEff_q2bin%d",q2BinIndx),Form("pdf_genEff q2bin=%d",q2BinIndx), ctKctLPhi, rh3genEff, 0);
+  // pdf_genEff.Write(Form("pdf_genEff_q2bin%d",q2BinIndx));
+
+  if (doPlot)  plot3D(q2BinIndx, h3genEff, "_effGen");
+
+  // // Compute ratio for Gen efficiency
+  // MyRatioPdf* ratioGen  = new MyRatioPdf(*ele_KEpdf->at(1),*ele_KEpdf->at(0));
+  // ROOT::Math::Functor* effGenFunctor = new ROOT::Math::Functor(*ratioGen,ratioGen->ndim());
+  // EffGenPDF             = new RooFunctorPdfBinding("EffGenPDF","EffGenPDF",*effGenFunctor,ratioGen->vars());
+  // if (doPlot)  plot3D(q2BinIndx, *EffGenPDF, "_effGen");
   cout << " Done" << endl;
 
   cout << "Reco " ;
   // numerator and denominator for RECO ratio
   ComputeEfficiency(theTreeRecoCandidates,       NTupleRecoCandidates,       q2BinIndx, 3 ,atoi(SignalType.c_str()));
-  ComputeEfficiency(theTreeSingleCand,           NTupleSingleCand,           q2BinIndx, 4 ,atoi(SignalType.c_str()));
+  TH3* h3recoDen = (TH3*)(ele_KEpdf->at(2))->createHistogram("h3recoDen",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+  h3recoDen->Scale(Counter[2]*1./h3recoDen->Integral());
+  h3recoDen->Write(Form("h3recoDen_q2bin%i",q2BinIndx));
 
-  // Compute ratio for RECO efficiency
-  MyRatioPdf* ratioReco  = new MyRatioPdf(*ele_KEpdf->at(3),*ele_KEpdf->at(2));
-  ROOT::Math::Functor* effRecoFunctor = new ROOT::Math::Functor(*ratioReco,ratioReco->ndim());
-  EffRecoPDF             = new RooFunctorPdfBinding("EffRecoPDF","EffRecoPDF",*effRecoFunctor,ratioReco->vars());
-  if (doPlot)  plot3D(q2BinIndx, *EffRecoPDF, "_effReco");
-  cout << "Done " << endl;
+  // RooDataHist rh3recoDen("rh3recoDen","rh3recoDen", ctKctLPhi, Import(*h3recoDen,kTRUE));
+  // RooHistPdf pdf_recoDen(Form("pdf_recoDen_q2bin%d",q2BinIndx),Form("pdf_recoDen q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoDen, 0);
+  // pdf_recoDen.Write(Form("pdf_recoDen_q2bin%d",q2BinIndx));
+
+  ComputeEfficiency(theTreeSingleCand,           NTupleSingleCand,           q2BinIndx, 4 ,atoi(SignalType.c_str()));
+  TH3* h3recoNum = (TH3*)(ele_KEpdf->at(3))->createHistogram("h3recoNum",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+  h3recoNum->Scale(Counter[3]*1./h3recoNum->Integral());
+  h3recoNum->Write(Form("h3recoNum_q2bin%i",q2BinIndx));
+
+  // RooDataHist rh3recoNum("rh3recoNum","rh3recoNum", ctKctLPhi, Import(*h3recoNum,kTRUE));
+  // RooHistPdf pdf_recoNum(Form("pdf_recoNum_q2bin%d",q2BinIndx),Form("pdf_recoNum q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoNum, 0);
+  // pdf_recoNum.Write(Form("pdf_recoNum_q2bin%d",q2BinIndx));
+
+  TH3* h3recoEff = (TH3*)h3recoNum->Clone("h3recoEff");
+  h3recoEff->Divide(h3recoDen);
+  //h3recoEff->Scale((Counter[3]*1./Counter[2])/h3recoEff->Integral());
+  cout << "Reco: N=" << Counter[3] << "/D=" << Counter[2] << "=" << h3recoEff->Integral()<< endl;
+  fileOut->cd();
+  h3recoEff->Write(Form("h3recoEff_q2bin%i",q2BinIndx));
+
+  // RooDataHist rh3recoEff("rh3recoEff","rh3recoEff", ctKctLPhi, Import(*h3recoEff,kTRUE));
+  // RooHistPdf pdf_recoEff(Form("pdf_recoEff_q2bin%d",q2BinIndx),Form("pdf_recoEff q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoEff, 0);
+  // pdf_recoEff.Write(Form("pdf_recoEff_q2bin%d",q2BinIndx));
+
+  if (doPlot)  plot3D(q2BinIndx, h3recoEff, "_effReco");
+
+  // // Compute ratio for RECO efficiency
+  // MyRatioPdf* ratioReco  = new MyRatioPdf(*ele_KEpdf->at(3),*ele_KEpdf->at(2));
+  // ROOT::Math::Functor* effRecoFunctor = new ROOT::Math::Functor(*ratioReco,ratioReco->ndim());
+  // EffRecoPDF             = new RooFunctorPdfBinding("EffRecoPDF","EffRecoPDF",*effRecoFunctor,ratioReco->vars());
+  // if (doPlot)  plot3D(q2BinIndx, *EffRecoPDF, "_effReco");
+  // cout << "Done " << endl;
 
   // // Create a new empty workspace
   // RooWorkspace *w = new RooWorkspace("w","workspace") ;
@@ -552,16 +655,29 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   // EffGenPDF->Write(Form("effGenPdf_q2bin%i",q2BinIndx));
   // EffRecoPDF->Write(Form("effRecoPdf_q2bin%i",q2BinIndx));
   // fileOut->Close();
+  //if (doPlot) for (int i=0; i<4; i++) plot3D(q2BinIndx, *ele_KEpdf->at(i), Form("_term%i",i));
 
-  if (doPlot) for (int i=0; i<4; i++) plot3D(q2BinIndx, *ele_KEpdf->at(i), Form("_term%i",i));
+  TH3* h3Eff = (TH3*)h3genEff->Clone("h3Eff");
+  h3Eff->Multiply(h3recoEff);
+  //h3Eff->Scale((Counter[1]*1./Counter[0])*(Counter[3]*1./Counter[2])/h3Eff->Integral());
+  cout << "h3Eff " << h3Eff->Integral() << endl;
+  fileOut->cd();
+  h3Eff->Write(Form("h3Eff_q2bin%i",q2BinIndx));
+
+  // RooDataHist rh3Eff("rh3Eff","rh3Eff", ctKctLPhi, Import(*h3Eff,kTRUE));
+  // RooHistPdf pdf_Eff(Form("pdf_Eff_q2bin%d",q2BinIndx),Form("pdf_Eff q2bin=%d",q2BinIndx), ctKctLPhi, rh3Eff, 0);
+  // pdf_Eff.Write(Form("pdf_Eff_q2bin%d",q2BinIndx));
+
+  if (doPlot)  plot3D(q2BinIndx, h3Eff, "_eff");
+  fileOut->Close();
 
 
-  cout << "Doing product " << endl;
-  // Try do do double ratio, which is a product
-  MyProdPdf* prodPdf  = new MyProdPdf(*EffGenPDF, *EffRecoPDF);
-  ROOT::Math::Functor* effFunctor = new ROOT::Math::Functor(*prodPdf,prodPdf->ndim());
-  EffPDF             = new RooFunctorPdfBinding("EffPDF","EffPDF",*effFunctor,prodPdf->vars());
-  cout << "Done" << endl;
+  // cout << "Doing product " << endl;
+  // // Try do do double ratio, which is a product
+  // MyProdPdf* prodPdf  = new MyProdPdf(*EffGenPDF, *EffRecoPDF);
+  // ROOT::Math::Functor* effFunctor = new ROOT::Math::Functor(*prodPdf,prodPdf->ndim());
+  // EffPDF             = new RooFunctorPdfBinding("EffPDF","EffPDF",*effFunctor,prodPdf->vars());
+  // cout << "Done" << endl;
 
   // MyEffPdf* myeffpdf  = new MyEffPdf(*ele_KEpdf->at(0),*ele_KEpdf->at(1),*ele_KEpdf->at(2),*ele_KEpdf->at(3));
   // ROOT::Math::Functor* effFunctor = new ROOT::Math::Functor(*myeffpdf,myeffpdf->ndim());
@@ -571,9 +687,8 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   // fileOut->cd();
   // EffPDF->Write(Form("effPdf_q2bin%i",q2BinIndx));
   // fileOut->Close();
-
-  if (doPlot)  plot3D(q2BinIndx, *EffPDF, "_eff");
-  EffPDF->Delete();
+  //if (doPlot)  plot3D(q2BinIndx, *EffPDF, "_eff");
+  // EffPDF->Delete();
   delete ele_KEpdf;
 }
 
@@ -587,9 +702,9 @@ int main(int argc, char** argv)
 
     TApplication theApp ("Applications", &argc, argv);
     Utility = new Utils(false);
-    CosThetaK.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
-    CosThetaMu.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
-    PhiKstMuMuPlane.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
+    // CosThetaK.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
+    // CosThetaMu.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
+    // PhiKstMuMuPlane.defaultIntegratorConfig()->method2D().setLabel("RooMCIntegrator");
 
     unsigned int q2BinIndx=0;
     bool doPlot=false;
