@@ -59,6 +59,7 @@ RooArgSet ctLphi(ctL,phi);
 RooArgSet ctKctLphi(ctK,ctL,phi);
 
 TFile* pdfEffHistoFile3d=0;
+TFile* histEffHistoFile3d=0;
 TH2D* H2Deff_ctL_phi;
 TH2D* H2Deff_ctK_phi;
 TH3D* H3Deff_ctK_ctL_phi;
@@ -67,6 +68,7 @@ B0KstMuMuSingleCandTreeContent* NTupleIn_reco;
 B0KstMuMuSingleCandTreeContent* NTupleIn_gen;
 
 static const int qbins=8;
+TH3F* hist_ctKctLphi_q2bin2[qbins];
 RooHistPdf* pdf_ctKctLphi_q2bin2[qbins];
 TH2F* h_reco_ctk_ctl_phi1[qbins];
 TH2F* h_reco_ctk_ctl_phi2[qbins];
@@ -145,8 +147,8 @@ void loadEffHisto(unsigned int q2bin) {
   if (!pdfEffHistoFile3d) { 
     cout << "Loading eff3DOutputFile.root" << endl;
     pdfEffHistoFile3d=TFile::Open("eff3DOutputFile.root","READ");
+    pdfEffHistoFile3d->ls();
   }
-  pdfEffHistoFile3d->ls();
   //cout << "Try to get " << Form("pdf_ctKctLphi_q2bin%d",q2bin) ;
   //pdf_ctKctLphi_q2bin2[q2bin-1]=(RooHistPdf*) pdfEffHistoFile3d->Get(Form("pdf_ctKctLphi_q2bin%d",q2bin));
   //cout << " :pdf_ctKctLphi_q2bin2[" << (q2bin-1) << "]=" << pdf_ctKctLphi_q2bin2[q2bin-1] << endl;
@@ -155,6 +157,15 @@ void loadEffHisto(unsigned int q2bin) {
   pdf_ctKctLphi_q2bin2[q2bin-1]=(RooHistPdf*) pdfEffHistoFile3d->Get(Form("pdf_ctKctLphi_2D_q2bin%d",q2bin));
   cout << " :pdf_ctKctLphi_2D_q2bin2[" << (q2bin-1) << "]=" << pdf_ctKctLphi_q2bin2[q2bin-1] << endl;
   cout << " :pdf_ctKctLphi_q2bin2[" << (q2bin-1) << "]=" << pdf_ctKctLphi_q2bin2[q2bin-1] << endl;
+
+  if (!histEffHistoFile3d) { 
+    cout << "Loading eff3DOutputFile.root" << endl;
+    histEffHistoFile3d=TFile::Open("effKEpdf.root","READ");
+    histEffHistoFile3d->ls();
+  }
+  cout << "Try to get " << Form("h3Eff_q2bin%d",q2bin) ;
+  hist_ctKctLphi_q2bin2[q2bin-1]=(TH3F*) histEffHistoFile3d->Get(Form("h3Eff_q2bin%d",q2bin));
+  cout << " :hist_ctKctLphi_q2bin2[" << (q2bin-1) << "]=" << hist_ctKctLphi_q2bin2[q2bin-1] << endl;
 }
 
 void loadBinning() {
@@ -210,6 +221,16 @@ void fillHistoGen(int q2bin) {
   // PrintVariables(pdf_ctKctLphi_q2bin2[q2bin-1]->getVariables(),"vars");
 
   double weight = pdf_ctKctLphi_q2bin2[q2bin-1]->getVal();
+
+  // using the histogramA
+  
+  int binX=hist_ctKctLphi_q2bin2[q2bin-1]->GetXaxis()->FindBin(NTupleIn_gen->CosThetaKArb);
+  int binY=hist_ctKctLphi_q2bin2[q2bin-1]->GetYaxis()->FindBin(NTupleIn_gen->CosThetaMuArb);
+  int binZ=hist_ctKctLphi_q2bin2[q2bin-1]->GetZaxis()->FindBin(NTupleIn_gen->PhiKstMuMuPlaneArb);
+  //cout << "bins: " << binX << " " << binY << " " << binZ << endl;
+  weight = hist_ctKctLphi_q2bin2[q2bin-1]->GetBinContent(binX,binY,binZ);
+  //cout << "weight " << weight<< endl;
+
   //double weight=1;
   // cout << "weight " << weight << endl;
   if (NTupleIn_gen->PhiKstMuMuPlaneArb < -0.5*TMath::Pi())     h_gen_ctk_ctl_phi1[q2bin-1]->Fill(NTupleIn_gen->CosThetaKArb,NTupleIn_gen->CosThetaMuArb,weight*nweight);
