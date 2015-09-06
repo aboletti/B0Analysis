@@ -1,0 +1,6 @@
+Universe   = vanilla
+Executable = test.sh 
+Log        = test.log.$(Cluster)
+Output     = test.out.$(Cluster)
+Error      = test.out.$(Cluster)
+Queue
