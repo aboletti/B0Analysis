@@ -1,9 +1,19 @@
 RooRealVar ctK("ctK","cos#theta_{K}",-1.,1.);
 RooRealVar ctL("ctL","cos#theta_{L}",-1.,1.);
 RooRealVar phi("phi","#phi",-1.*TMath::Pi(),1.*TMath::Pi());
-TFile* file=TFile::Open("pdf2DOutputFile.root","READ");
+TFile* file=TFile::Open("effKEpdf.root","READ");
+
+void plotKEPdf(unsigned int q2bin) {
+  TString pdfName=Form("term0Pdf_q2bin%d",q2bin);
+  TCanvas* c1=new TCanvas(Form("canProjection%d",q2bin),"",800,800);
+  RooNDKeysPdf* term0Pdf = (RooNDKeysPdf*)file->Get(pdfName);
+  TH2* h2_pdf_ctKctL=term0Pdf->createHistogram("ctK,ctL");
+  h2_pdf_ctKctL->Draw("surf3 fp");
+
+}
 
 void plotPdf(unsigned int q2bin) {
+
 
 
   TCanvas* c1=new TCanvas(Form("canProjection%d",q2bin),"",800,800);

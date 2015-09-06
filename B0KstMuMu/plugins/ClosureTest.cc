@@ -212,15 +212,16 @@ void fillHistoGen(int q2bin) {
 
   if ( (NTupleIn_gen->B0pT < Utility->GetSeleCut("B0pT")) || (fabs(NTupleIn_gen->B0Eta) > Utility->GetSeleCut("B0Eta")) ) return;
 
-  RooArgSet* arg=pdf_ctKctLphi_q2bin2[q2bin-1]->getVariables();
-  arg->setRealValue("ctK",NTupleIn_gen->CosThetaKArb);
-  arg->setRealValue("ctL",NTupleIn_gen->CosThetaMuArb);
-  arg->setRealValue("phi",NTupleIn_gen->PhiKstMuMuPlaneArb);
+  // RooArgSet* arg=pdf_ctKctLphi_q2bin2[q2bin-1]->getVariables();
+  // arg->setRealValue("ctK",NTupleIn_gen->CosThetaKArb);
+  // arg->setRealValue("ctL",NTupleIn_gen->CosThetaMuArb);
+  // arg->setRealValue("phi",NTupleIn_gen->PhiKstMuMuPlaneArb);
 
-  // cout << "pdf_ctKctLphi_q2bin2[" << (q2bin-1) << "]=" << pdf_ctKctLphi_q2bin2[q2bin-1] << endl;
-  // PrintVariables(pdf_ctKctLphi_q2bin2[q2bin-1]->getVariables(),"vars");
+  // // cout << "pdf_ctKctLphi_q2bin2[" << (q2bin-1) << "]=" << pdf_ctKctLphi_q2bin2[q2bin-1] << endl;
+  // // PrintVariables(pdf_ctKctLphi_q2bin2[q2bin-1]->getVariables(),"vars");
 
-  double weight = pdf_ctKctLphi_q2bin2[q2bin-1]->getVal();
+  // double weight = pdf_ctKctLphi_q2bin2[q2bin-1]->getVal();
+  double weight = 1.;
 
   // using the histogramA
   
@@ -459,7 +460,7 @@ int main(int argc, char** argv)
         performTest(q2BinIndx, nev_reco, nev_gen, doPlot);
       }
 
-      theApp.Run();
+      if (doBatch == false) theApp.Run();
     }
   else
     {

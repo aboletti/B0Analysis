@@ -365,7 +365,7 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
 
   RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(CosThetaK,CosThetaMu, PhiKstMuMuPlane));
 
-  for (int entry = 0; entry < nEntries/100; entry++)
+  for (int entry = 0; entry < nEntries; entry++)
   {
     theTree->GetEntry(entry);
 
