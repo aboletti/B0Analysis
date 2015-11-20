@@ -55,7 +55,34 @@ ComputeEfficiency3D: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiency3D.cc
 ComputeEfficiencyKE: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
+ComputeEfficiencyKE_jp: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_jp.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_p2: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_p2.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_wt: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_wt.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_wt_jp: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_wt_jp.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_wt_p2: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_wt_p2.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_test1: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_test1.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+ComputeEfficiencyKE_test2: $(SOURCEDIR) $(INCLUDEDIR) ComputeEfficiencyKE_test2.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
 ClosureTest: $(SOURCEDIR) $(INCLUDEDIR) ClosureTest.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+Hist2pdf: $(SOURCEDIR) $(INCLUDEDIR) Hist2pdf.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
+PlotPdf: $(SOURCEDIR) $(INCLUDEDIR) PlotPdf.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
 LOCALCC := $(wildcard *.cc)
@@ -63,4 +90,3 @@ clean:
 	$(RM) $(LOCALCC:%.cc=%) Macros_C.*
 
 all: $(LOCALCC:%.cc=%)
-	
