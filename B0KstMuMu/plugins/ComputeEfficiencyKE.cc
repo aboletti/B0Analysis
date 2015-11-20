@@ -114,7 +114,6 @@ const string fileNameGenCandidatesNoFilter = "dcap://t2-srm-02.lnl.infn.it//pnfs
 //string fileNameRecoCandidates        = "dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/RECOcands/B0ToKstMuMu_MC_NTuple.root";
 const string fileNameRecoCandidates        = "dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/ForEfficiency/B0ToKstMuMu_MC_NTuple_addGENvars.root";
 const string fileNameSingleCand            = "dcap://t2-srm-02.lnl.infn.it////pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/SingleCand/singleCand_B0ToKstMuMu_MC_NTuple.root";
-const string fileNameOutput                = "effKEpdf.root";
 const string SignalType                    = "1";
 
 // ####################
@@ -149,7 +148,13 @@ RooBinning cosThetaKBinning;
 RooBinning phiBinning;
 RooRealVar CosThetaK("CosThetaK","cos#theta_{K}",-1,1);
 RooRealVar CosThetaMu("CosThetaMu","cos#theta_{#mu}",-1,1) ;
+RooRealVar AbsCosThetaMu("AbsCosThetaMu","abs(cos#theta_{#mu})",0,1) ;
+RooRealVar ThetaK("ThetaK","#theta_{K}",0,TMath::Pi());
+RooRealVar ThetaMu("ThetaMu","#theta_{#mu}",0,TMath::Pi()) ;
 RooRealVar PhiKstMuMuPlane("PhiKstMuMuPlane","#phi_{K*#mu#mu}",-TMath::Pi(),TMath::Pi()) ;
+RooRealVar AbsPhiKstMuMuPlane("AbsPhiKstMuMuPlane","abs(#phi_{K*#mu#mu})",0,TMath::Pi()) ;
+
+unsigned int termIdx=0;
 
 // #######################
 // # Function Definition #
@@ -330,7 +335,7 @@ void loadBinning() {
   phiBinning = RooBinning(phiBins.size()-1,phiBins_);
 }
 
-void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, double q2BinIdx, unsigned int type, int SignalType)
+void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, double q2BinIdx, unsigned int type, int SignalType, float width, bool crossCheck)
   // ##########################################################
   // # Efficiency type = 1 --> total gen events before filter #
   // # Efficiency type = 2 --> total gen events after filter  #
@@ -361,13 +366,18 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   else if (type == 2) cout << " (after filter) @@@" << endl;
   else if (type == 3) cout << " (reco events) @@@" << endl;
   else if (type == 4) cout << " (single candidate events) @@@" << endl;
+  if (type == 3 && q2BinIdx==6) nEntries = nEntries/2;
+  if (type == 1 && q2BinIdx==6) nEntries = nEntries/2;
   cout << "[ComputeEfficiency::ComputeEfficiency]\t@@@ Total number of events in the tree: " << nEntries << " @@@" << endl;
 
-  RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(CosThetaK,CosThetaMu, PhiKstMuMuPlane));
+  RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(CosThetaK,AbsCosThetaMu,AbsPhiKstMuMuPlane));
+  //RooDataSet KEpdf_data("KEpdf_data", "KEpdf_data", RooArgSet(ThetaK,ThetaMu, PhiKstMuMuPlane));
 
   for (int entry = 0; entry < nEntries; entry++)
   {
     theTree->GetEntry(entry);
+
+    if (crossCheck && NTuple->eventN%2 == 1) continue;
 
     if ((NTuple->B0pT > Utility->GetSeleCut("B0pT")) && (fabs(NTuple->B0Eta) < Utility->GetSeleCut("B0Eta")) &&
 
@@ -409,8 +419,13 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
 
       CosThetaK.setVal(cosThetaKArb);
       CosThetaMu.setVal(cosThetaMuArb);
+      AbsCosThetaMu.setVal(TMath::Abs(cosThetaMuArb));
+      ThetaK.setVal(TMath::ACos(cosThetaKArb));
+      ThetaMu.setVal(TMath::ACos(cosThetaMuArb));
       PhiKstMuMuPlane.setVal(phiKstMuMuPlaneArb);
-      KEpdf_data.add(RooArgSet(CosThetaK,CosThetaMu, PhiKstMuMuPlane));
+      AbsPhiKstMuMuPlane.setVal(TMath::Abs(phiKstMuMuPlaneArb));
+      KEpdf_data.add(RooArgSet(CosThetaK,AbsCosThetaMu,AbsPhiKstMuMuPlane));
+      //KEpdf_data.add(RooArgSet(ThetaK,ThetaMu, PhiKstMuMuPlane));
 
       // ##################################################
       // # No event-weight for muon acceptance efficiency #
@@ -425,7 +440,8 @@ void ComputeEfficiency (TTree* theTree, B0KstMuMuSingleCandTreeContent* NTuple, 
   }
 
   cout << "[ComputeEfficiency::ComputeEfficiency]\t@@@ Total number of passing events: " << Counter[type-1] << " @@@" << endl;
-  ele_KEpdf->at(type-1) = new RooNDKeysPdf(Form("ele_KEpdf%i",type-1), Form("ele_KEpdf%i",type-1), RooArgList(CosThetaK,CosThetaMu, PhiKstMuMuPlane), KEpdf_data, "M");
+  ele_KEpdf->at(type-1) = new RooNDKeysPdf(Form("ele_KEpdf%i",type-1), Form("ele_KEpdf%i",type-1), RooArgList(CosThetaK,AbsCosThetaMu,AbsPhiKstMuMuPlane), KEpdf_data, "AM", width);
+  //ele_KEpdf->at(type-1) = new RooNDKeysPdf(Form("ele_KEpdf%i",type-1), Form("ele_KEpdf%i",type-1), RooArgList(ThetaK,ThetaMu, PhiKstMuMuPlane), KEpdf_data, "m");
 }
 
 void plot3D(unsigned int q2bin, const TH3* xyzEff, TString suffix="") {
@@ -480,9 +496,12 @@ void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
   // c3Dfull->cd(1);
   // TH2* hhcKcLpdf = (TH2*)xyzEff.createHistogram("hhcKcLpdf",CosThetaK,Binning(cosThetaKBinning),YVar(CosThetaMu,Binning(cosThetaLBinning)));
   // hhcKcLpdf->DrawCopy("lego2 fp");
-  TH1* hh_pdf3xy = xyzEff.createHistogram("hh_pdfxy",CosThetaK,Binning(10),YVar(CosThetaMu,Binning(10))) ;
-  TH1* hh_pdf3xz = xyzEff.createHistogram("hh_pdfxz",CosThetaK,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
-  TH1* hh_pdf3yz = xyzEff.createHistogram("hh_pdfyz",CosThetaMu,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
+  //TH1* hh_pdf3xy = xyzEff.createHistogram("hh_pdfxy",CosThetaK,Binning(10),YVar(CosThetaMu,Binning(10))) ;
+  //TH1* hh_pdf3xz = xyzEff.createHistogram("hh_pdfxz",CosThetaK,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
+  //TH1* hh_pdf3yz = xyzEff.createHistogram("hh_pdfyz",CosThetaMu,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
+  TH1* hh_pdf3xy = xyzEff.createHistogram("hh_pdfxy",ThetaK,Binning(10),YVar(ThetaMu,Binning(10))) ;
+  TH1* hh_pdf3xz = xyzEff.createHistogram("hh_pdfxz",ThetaK,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
+  TH1* hh_pdf3yz = xyzEff.createHistogram("hh_pdfyz",ThetaMu,Binning(10),YVar(PhiKstMuMuPlane,Binning(10))) ;
   hh_pdf3xy->SetLineColor(kBlue) ;
   hh_pdf3xz->SetLineColor(kBlue) ;
   hh_pdf3yz->SetLineColor(kBlue) ;
@@ -546,21 +565,27 @@ void plot3D(unsigned int q2bin, const RooAbsPdf& xyzEff, TString suffix="") {
 }
 
 
-void computeEffForOneBin(int q2BinIndx, bool doPlot) {
+void computeEffForOneBin(int q2BinIndx, bool doPlot, float width, bool crossCheck) {
   cout << "computeEffForOneBin " << q2BinIndx << endl;
   // Open input file
   ele_KEpdf = new std::vector<RooNDKeysPdf*> (4);
-  TFile* fileOut = new TFile(fileNameOutput.c_str(), "RECREATE");
+  string fileNameOutput = Form("effKEpdf_b%i.root",q2BinIndx);
+  TFile* fileOut = new TFile(fileNameOutput.c_str(), "UPDATE");
 
-  cout << "Gen " ;
+  float fac = 1.;
+  if (q2BinIndx==6) fac = 2.;
+
   int nbin=40;
   fileOut->cd();
 
-  // numerator and denominator for Gen ratio
-  ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 1 ,atoi(SignalType.c_str()));
-  TH3* h3genDen = (TH3*)(ele_KEpdf->at(0))->createHistogram("h3genDen",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
-  h3genDen->Scale(Counter[0]*1./h3genDen->Integral());
-  h3genDen->Write(Form("h3genDen_q2bin%i",q2BinIndx));
+  if (termIdx == 1 || termIdx == 0) {
+    cout << "Gen den " ;
+    ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 1 ,atoi(SignalType.c_str()),width, crossCheck);
+    TH3* h3genDen = (TH3*)(ele_KEpdf->at(0))->createHistogram("h3genDen",CosThetaK,Binning(nbin),YVar(AbsCosThetaMu,Binning(nbin)),ZVar(AbsPhiKstMuMuPlane,Binning(nbin)));
+    //TH3* h3genDen = (TH3*)(ele_KEpdf->at(0))->createHistogram("h3genDen",ThetaK,Binning(nbin),YVar(ThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+    h3genDen->Scale(Counter[0]*fac/h3genDen->Integral());
+    h3genDen->Write("h3genDen");
+  }
 
   // // Create HistPdf from this TH3
   // RooArgList ctKctLPhi(CosThetaK,CosThetaMu, PhiKstMuMuPlane);
@@ -568,66 +593,76 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   // RooHistPdf pdf_genDen(Form("pdf_genDen_q2bin%d",q2BinIndx),Form("pdf_genDen q2bin=%d",q2BinIndx), ctKctLPhi, rh3genDen, 0);
   // pdf_genDen.Write(Form("pdf_genDen_q2bin%d",q2BinIndx));
 
-  ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 2 ,atoi(SignalType.c_str()));
-  TH3* h3genNum = (TH3*)(*ele_KEpdf->at(1)).createHistogram("h3genNum",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
-  h3genNum->Scale(Counter[1]*1./h3genNum->Integral());
-  h3genNum->Write(Form("h3genNum_q2bin%i",q2BinIndx));
-
+  if (termIdx == 2 || termIdx == 0) {
+    cout << "Gen num " ;
+    ComputeEfficiency(theTreeGenCandidatesNoFilter,NTupleGenCandidatesNoFilter,q2BinIndx, 2 ,atoi(SignalType.c_str()),width, crossCheck);
+    TH3* h3genNum = (TH3*)(*ele_KEpdf->at(1)).createHistogram("h3genNum",CosThetaK,Binning(nbin),YVar(AbsCosThetaMu,Binning(nbin)),ZVar(AbsPhiKstMuMuPlane,Binning(nbin)));
+    //TH3* h3genNum = (TH3*)(*ele_KEpdf->at(1)).createHistogram("h3genNum",ThetaK,Binning(nbin),YVar(ThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+    h3genNum->Scale(Counter[1]*1./h3genNum->Integral());
+    h3genNum->Write("h3genNum");
+  }
   // RooDataHist rh3genNum("rh3genNum","rh3genNum", ctKctLPhi, Import(*h3genNum,kTRUE));
   // RooHistPdf pdf_genNum(Form("pdf_genNum_q2bin%d",q2BinIndx),Form("pdf_genNum q2bin=%d",q2BinIndx), ctKctLPhi, rh3genNum, 0);
   // pdf_genNum.Write(Form("pdf_genNum_q2bin%d",q2BinIndx));
 
-  TH3* h3genEff = (TH3*)h3genNum->Clone("h3genEff");
-  h3genEff->Divide(h3genDen);
+  //TH3* h3genEff = (TH3*)h3genNum->Clone("h3genEff");
+  //h3genEff->Divide(h3genDen);
   //h3genEff->Scale((Counter[1]*1./Counter[0])/h3genEff->Integral());
-  cout << "Gen: N=" << Counter[1] << "/D=" << Counter[0] << "=" << h3genEff->Integral() << endl;
-  h3genEff->Write(Form("h3genEff_q2bin%i",q2BinIndx));
+  //cout << "Gen: N=" << Counter[1] << "/D=" << Counter[0] << "=" << h3genEff->Integral() << endl;
+  //h3genEff->Write(Form("h3genEff_q2bin%i",q2BinIndx));
 
   // RooDataHist rh3genEff("rh3genEff","rh3genEff", ctKctLPhi, Import(*h3genEff,kTRUE));
   // RooHistPdf pdf_genEff(Form("pdf_genEff_q2bin%d",q2BinIndx),Form("pdf_genEff q2bin=%d",q2BinIndx), ctKctLPhi, rh3genEff, 0);
   // pdf_genEff.Write(Form("pdf_genEff_q2bin%d",q2BinIndx));
 
-  if (doPlot)  plot3D(q2BinIndx, h3genEff, "_effGen");
+  //if (doPlot)  plot3D(q2BinIndx, h3genEff, "_effGen");
 
   // // Compute ratio for Gen efficiency
   // MyRatioPdf* ratioGen  = new MyRatioPdf(*ele_KEpdf->at(1),*ele_KEpdf->at(0));
   // ROOT::Math::Functor* effGenFunctor = new ROOT::Math::Functor(*ratioGen,ratioGen->ndim());
   // EffGenPDF             = new RooFunctorPdfBinding("EffGenPDF","EffGenPDF",*effGenFunctor,ratioGen->vars());
   // if (doPlot)  plot3D(q2BinIndx, *EffGenPDF, "_effGen");
-  cout << " Done" << endl;
+  //cout << " Done" << endl;
 
-  cout << "Reco " ;
   // numerator and denominator for RECO ratio
-  ComputeEfficiency(theTreeRecoCandidates,       NTupleRecoCandidates,       q2BinIndx, 3 ,atoi(SignalType.c_str()));
-  TH3* h3recoDen = (TH3*)(ele_KEpdf->at(2))->createHistogram("h3recoDen",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
-  h3recoDen->Scale(Counter[2]*1./h3recoDen->Integral());
-  h3recoDen->Write(Form("h3recoDen_q2bin%i",q2BinIndx));
+  if (termIdx == 3 || termIdx == 0) {
+    cout << "Reco den " ;
+    ComputeEfficiency(theTreeRecoCandidates,       NTupleRecoCandidates,       q2BinIndx, 3 ,atoi(SignalType.c_str()),width, crossCheck);
+    TH3* h3recoDen = (TH3*)(ele_KEpdf->at(2))->createHistogram("h3recoDen",CosThetaK,Binning(nbin),YVar(AbsCosThetaMu,Binning(nbin)),ZVar(AbsPhiKstMuMuPlane,Binning(nbin)));
+    //TH3* h3recoDen = (TH3*)(ele_KEpdf->at(2))->createHistogram("h3recoDen",ThetaK,Binning(nbin),YVar(ThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+    h3recoDen->Scale(Counter[2]*fac/h3recoDen->Integral());
+    h3recoDen->Write("h3recoDen");
+  }
 
   // RooDataHist rh3recoDen("rh3recoDen","rh3recoDen", ctKctLPhi, Import(*h3recoDen,kTRUE));
   // RooHistPdf pdf_recoDen(Form("pdf_recoDen_q2bin%d",q2BinIndx),Form("pdf_recoDen q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoDen, 0);
   // pdf_recoDen.Write(Form("pdf_recoDen_q2bin%d",q2BinIndx));
 
-  ComputeEfficiency(theTreeSingleCand,           NTupleSingleCand,           q2BinIndx, 4 ,atoi(SignalType.c_str()));
-  TH3* h3recoNum = (TH3*)(ele_KEpdf->at(3))->createHistogram("h3recoNum",CosThetaK,Binning(nbin),YVar(CosThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
-  h3recoNum->Scale(Counter[3]*1./h3recoNum->Integral());
-  h3recoNum->Write(Form("h3recoNum_q2bin%i",q2BinIndx));
+  if (termIdx == 4 || termIdx == 0) {
+    cout << "Reco num " ;
+    ComputeEfficiency(theTreeSingleCand,           NTupleSingleCand,           q2BinIndx, 4 ,atoi(SignalType.c_str()),width, crossCheck);
+    TH3* h3recoNum = (TH3*)(ele_KEpdf->at(3))->createHistogram("h3recoNum",CosThetaK,Binning(nbin),YVar(AbsCosThetaMu,Binning(nbin)),ZVar(AbsPhiKstMuMuPlane,Binning(nbin)));
+    //TH3* h3recoNum = (TH3*)(ele_KEpdf->at(3))->createHistogram("h3recoNum",ThetaK,Binning(nbin),YVar(ThetaMu,Binning(nbin)),ZVar(PhiKstMuMuPlane,Binning(nbin)));
+    h3recoNum->Scale(Counter[3]*1./h3recoNum->Integral());
+    h3recoNum->Write("h3recoNum");
+  }
 
   // RooDataHist rh3recoNum("rh3recoNum","rh3recoNum", ctKctLPhi, Import(*h3recoNum,kTRUE));
   // RooHistPdf pdf_recoNum(Form("pdf_recoNum_q2bin%d",q2BinIndx),Form("pdf_recoNum q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoNum, 0);
   // pdf_recoNum.Write(Form("pdf_recoNum_q2bin%d",q2BinIndx));
 
-  TH3* h3recoEff = (TH3*)h3recoNum->Clone("h3recoEff");
-  h3recoEff->Divide(h3recoDen);
+  //TH3* h3recoEff = (TH3*)h3recoNum->Clone("h3recoEff");
+  //h3recoEff->Divide(h3recoDen);
   //h3recoEff->Scale((Counter[3]*1./Counter[2])/h3recoEff->Integral());
-  cout << "Reco: N=" << Counter[3] << "/D=" << Counter[2] << "=" << h3recoEff->Integral()<< endl;
-  fileOut->cd();
-  h3recoEff->Write(Form("h3recoEff_q2bin%i",q2BinIndx));
+  //cout << "Reco: N=" << Counter[3] << "/D=" << Counter[2] << "=" << h3recoEff->Integral()<< endl;
+  //fileOut->cd();
+  //h3recoEff->Write(Form("h3recoEff_q2bin%i",q2BinIndx));
 
   // RooDataHist rh3recoEff("rh3recoEff","rh3recoEff", ctKctLPhi, Import(*h3recoEff,kTRUE));
   // RooHistPdf pdf_recoEff(Form("pdf_recoEff_q2bin%d",q2BinIndx),Form("pdf_recoEff q2bin=%d",q2BinIndx), ctKctLPhi, rh3recoEff, 0);
   // pdf_recoEff.Write(Form("pdf_recoEff_q2bin%d",q2BinIndx));
 
-  if (doPlot)  plot3D(q2BinIndx, h3recoEff, "_effReco");
+  //if (doPlot)  plot3D(q2BinIndx, h3recoEff, "_effReco");
 
   // // Compute ratio for RECO efficiency
   // MyRatioPdf* ratioReco  = new MyRatioPdf(*ele_KEpdf->at(3),*ele_KEpdf->at(2));
@@ -657,18 +692,18 @@ void computeEffForOneBin(int q2BinIndx, bool doPlot) {
   // fileOut->Close();
   //if (doPlot) for (int i=0; i<4; i++) plot3D(q2BinIndx, *ele_KEpdf->at(i), Form("_term%i",i));
 
-  TH3* h3Eff = (TH3*)h3genEff->Clone("h3Eff");
-  h3Eff->Multiply(h3recoEff);
+  //TH3* h3Eff = (TH3*)h3genEff->Clone("h3Eff");
+  //h3Eff->Multiply(h3recoEff);
   //h3Eff->Scale((Counter[1]*1./Counter[0])*(Counter[3]*1./Counter[2])/h3Eff->Integral());
-  cout << "h3Eff " << h3Eff->Integral() << endl;
-  fileOut->cd();
-  h3Eff->Write(Form("h3Eff_q2bin%i",q2BinIndx));
+  //cout << "h3Eff " << h3Eff->Integral() << endl;
+  //fileOut->cd();
+  //h3Eff->Write(Form("h3Eff_q2bin%i",q2BinIndx));
 
   // RooDataHist rh3Eff("rh3Eff","rh3Eff", ctKctLPhi, Import(*h3Eff,kTRUE));
   // RooHistPdf pdf_Eff(Form("pdf_Eff_q2bin%d",q2BinIndx),Form("pdf_Eff q2bin=%d",q2BinIndx), ctKctLPhi, rh3Eff, 0);
   // pdf_Eff.Write(Form("pdf_Eff_q2bin%d",q2BinIndx));
 
-  if (doPlot)  plot3D(q2BinIndx, h3Eff, "_eff");
+  //if (doPlot)  plot3D(q2BinIndx, h3Eff, "_eff");
   fileOut->Close();
 
 
@@ -709,16 +744,21 @@ int main(int argc, char** argv)
     unsigned int q2BinIndx=0;
     bool doPlot=false;
     bool doBatch=false;
+    float width=1.;
+    bool crossCheck=false;
     if ( argc > 1 ) q2BinIndx = atoi(argv[1]);
     if ( argc > 2 ) doPlot = atoi(argv[2]);
     if ( argc > 3 ) doBatch = atoi(argv[3]);
+    if ( argc > 4 ) termIdx = atoi(argv[4]);
+    if ( argc > 5 ) width = atof(argv[5]);
+    if ( argc > 6 ) crossCheck = atoi(argv[6]);
 
     if (doBatch) {
       cout << "\n[" << argv[0] << "::main]\t@@@ Setting batch mode @@@" << endl;
       gROOT->SetBatch(doBatch);
     }
 
-
+    
     TFile* NtplFileGenCandidatesNoFilter =  TFile::Open(fileNameGenCandidatesNoFilter.c_str(), "READ");
     theTreeGenCandidatesNoFilter         = (TTree*) NtplFileGenCandidatesNoFilter->Get("B0KstMuMu/B0KstMuMuNTuple");
 
@@ -744,19 +784,19 @@ int main(int argc, char** argv)
     loadBinning();
 
     // Create a new file and close it
-    TFile* fileOut = new TFile(fileNameOutput.c_str(), "RECREATE");
-    fileOut->Close();
+    //TFile* fileOut = new TFile(fileNameOutput.c_str(), "RECREATE");
+    //fileOut->Close();
 
     // do all q2Bins at once
     if (q2BinIndx==0)
-      for (q2BinIndx=1; q2BinIndx<9; ++q2BinIndx) {
-        computeEffForOneBin(q2BinIndx, doPlot);
+      for (q2BinIndx=1; q2BinIndx<10; ++q2BinIndx) {
+        computeEffForOneBin(q2BinIndx, doPlot, width, crossCheck);
     }
-    else if (q2BinIndx>0 && q2BinIndx<9) {
-        computeEffForOneBin(q2BinIndx, doPlot);
+    else if (q2BinIndx>0 && q2BinIndx<10) {
+      computeEffForOneBin(q2BinIndx, doPlot, width, crossCheck);
     }
     else {
-      cout<<"q2Bin must be greater than 0 and smaller than 9. FAILURE!"<<endl;
+      cout<<"q2Bin must be greater than 0 and smaller than 10. FAILURE!"<<endl;
       delete Utility;
       if (doBatch == false) theApp.Run (); // Eventloop on air
       return EXIT_FAILURE;
