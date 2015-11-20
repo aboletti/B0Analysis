@@ -7,11 +7,17 @@
 #include <TF1.h>
 #include <TF2.h>
 #include <TF3.h>
+#include <TH3.h>
 #include <TMatrixTSym.h>
 #include <TGraphAsymmErrors.h>
 
 #if ROOFIT
+#include <TH3.h>
+#include <TTree.h>
+#include <RooArgSet.h>
 #include <RooRealVar.h>
+#include <RooAbsPdf.h>
+#include <RooHistPdf.h>
 #include <RooFitResult.h>
 #endif
 
@@ -141,6 +147,11 @@ class Utils
 			double WyzCov,
 			double* cosAlpha,
 			double* cosAlphaErr);
+
+#if ROOFIT
+  RooAbsPdf* ReadRTEffPDF (unsigned int q2BinIndx,RooRealVar* z, RooRealVar* y,RooRealVar* p);
+  RooAbsPdf* ReadWTEffPDF (unsigned int q2BinIndx,RooRealVar* z, RooRealVar* y,RooRealVar* p);
+#endif
 
   void ReadAllBins  (std::string fileName, std::vector<double>* q2Bins, std::vector<double>* cosThetaKBins, std::vector<double>* cosThetaLBins, std::vector<double>* phiBins, std::string signalType = "goodTag");
   void Readq2Bins   (std::string fileName, std::vector<double>* q2Bins);

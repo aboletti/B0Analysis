@@ -44,7 +44,7 @@ Utils::Utils (bool rightFlavorTag)
 
   nFitParam    = 67;
   nConfigParam = 4;
-  nFitObserv   = 5; // FL --- AFB --- P1 --- P2 --- BF
+  nFitObserv   = 3; // FL --- P5p --- P1 --- P2 --- BF
 
   NcoeffThetaL = 6;
   NcoeffThetaK = 4;
@@ -70,23 +70,7 @@ Utils::Utils (bool rightFlavorTag)
   RIGHTflavorTAG = rightFlavorTag;
 
   // Define names of the files containing the histogram of the efficiency
-  DirEfficiency  = "/efficiency/";
-
-  Histo2DEffNameOkTagSig   = "H2Deff_OkTag_q2Bin_interp";
-  Histo2DEffNameOkTagJPsi  = "H2Deff_OkTagJPsi_q2Bin_interp";
-  Histo2DEffNameOkTagPsi2S = "H2Deff_OkTagPsiP_q2Bin_interp";
-
-  Histo3DEffNameOkTagSig   = "H3Deff_OkTag_q2Bin_interp";
-  Histo3DEffNameOkTagJPsi  = "H3Deff_OkTagJPsi_q2Bin_interp";
-  Histo3DEffNameOkTagPsi2S = "H3Deff_OkTagPsiP_q2Bin_interp";
-
-  Histo2DEffNameMisTagSig   = "H2Deff_MisTag_q2Bin_interp";
-  Histo2DEffNameMisTagJPsi  = "H2Deff_MisTagJPsi_q2Bin_interp";
-  Histo2DEffNameMisTagPsi2S = "H2Deff_MisTagPsiP_q2Bin_interp";
-
-  Histo3DEffNameMisTagSig   = "H3Deff_MisTag_q2Bin_interp";
-  Histo3DEffNameMisTagJPsi  = "H3Deff_MisTagJPsi_q2Bin_interp";
-  Histo3DEffNameMisTagPsi2S = "H3Deff_MisTagPsiP_q2Bin_interp";
+  DirEfficiency  = "efficiency/";
 
   // ###############################################
   // # ===> Define codes to identify MC type <===  #
@@ -113,22 +97,6 @@ Utils::Utils (bool rightFlavorTag)
   std::cout << "ProbThreshold: "             << ProbThreshold << std::endl;
   std::cout << "scrambleFraction: "          << scrambleFraction << std::endl;
   std::cout << "DirEfficiency: "             << DirEfficiency << std::endl;
-
-  std::cout << "\nHisto2DEffNameOkTagSig: "  << Histo2DEffNameOkTagSig << std::endl;
-  std::cout << "Histo2DEffNameOkTagJPsi: "   << Histo2DEffNameOkTagJPsi << std::endl;
-  std::cout << "Histo2DEffNameOkTagPsi2S: "  << Histo2DEffNameOkTagPsi2S << std::endl;
-
-  std::cout << "\nHisto3DEffNameOkTagSig: "  << Histo3DEffNameOkTagSig << std::endl;
-  std::cout << "Histo3DEffNameOkTagJPsi: "   << Histo3DEffNameOkTagJPsi << std::endl;
-  std::cout << "Histo3DEffNameOkTagPsi2S: "  << Histo3DEffNameOkTagPsi2S << std::endl;
-
-  std::cout << "\nHisto2DEffNameMisTagSig: " << Histo2DEffNameMisTagSig << std::endl;
-  std::cout << "Histo2DEffNameMisTagJPsi: "  << Histo2DEffNameMisTagJPsi << std::endl;
-  std::cout << "Histo2DEffNameMisTagPsi2S: " << Histo2DEffNameMisTagPsi2S << std::endl;
-
-  std::cout << "\nHisto3DEffNameMisTagSig: " << Histo3DEffNameMisTagSig << std::endl;
-  std::cout << "Histo3DEffNameMisTagJPsi: "  << Histo3DEffNameMisTagJPsi << std::endl;
-  std::cout << "Histo3DEffNameMisTagPsi2S: " << Histo3DEffNameMisTagPsi2S << std::endl;
 
   std::cout << "\n@@@@@@ Utils class settings : public  @@@@@@" << std::endl;
   std::cout << "NcoeffThetaL: "              << NcoeffThetaL << std::endl;
@@ -286,6 +254,47 @@ void Utils::computeCosAlpha (double Vx,
     }
 }
 
+#if ROOFIT
+RooAbsPdf* Utils::ReadRTEffPDF (unsigned int q2BinIndx,RooRealVar* z, RooRealVar* y,RooRealVar* p)
+{
+  cout << "\n[Utils::ReadRTEffPDF]\t@@@ 3D angular*efficiency p.d.f. @@@" << endl;
+  RooAbsPdf* EffPDF =NULL;
+
+  //#######################
+  //# read eff parameters #
+  //#######################
+
+  TFile* file=TFile::Open("/lustre/cmswork/lacaprar/Ana/CMSSW_5_3_28/src/B0Analysis/B0KstMuMu/plugins/Efficiency/effKEpdf_out_RT.root","READ");
+  std::cout <<"[Utils::GetRTEffPdf]\t: " <<" effKEpdf_out_RT.root" << std::endl; 
+  TString pdfName=Form("pdf_ctKctLphi_q2bin%d",q2BinIndx+1);
+  RooHistPdf*  EffPDFm =(RooHistPdf*)file->Get(pdfName);
+  std::cout << "\n[ExtractYield::ReadRTEffPDF] \t@@@ Reading EFF parameters fit signal" <<  std::endl;  
+  //  TH3* h3 = (TH3*) EffPDFm ->createHistogram("ctK,ctL,phi");
+  // RooDataHist* Eff = new RooDataHist("Eff","Eff",RooArgList(*z,*y,*p),h3);
+  EffPDF = new RooHistPdf("EffPDF","EffPDF",RooArgSet(*z,*y,*p),EffPDFm->dataHist());
+  return EffPDF;
+}
+
+RooAbsPdf* Utils::ReadWTEffPDF (unsigned int q2BinIndx,RooRealVar* z, RooRealVar* y,RooRealVar* p)
+{
+  RooAbsPdf* EffPDF =NULL;
+
+  //# read eff parameters #
+  //#######################
+  TFile* file=TFile::Open("/lustre/cmswork/lacaprar/Ana/CMSSW_5_3_28/src/B0Analysis/B0KstMuMu/plugins/Efficiency/effKEpdf_out_WT.root","READ");
+  TString pdfName=Form("pdf_ctKctLphi_q2bin%d",q2BinIndx+1);
+  RooHistPdf* EffPDFm =(RooHistPdf*)file->Get(pdfName);
+  std::cout << "\n[ExtractYield::ReadWTEffPDF] \t@@@ Reading EFF parameters fit signal" << std::endl;
+  //   TH3* histo =(TH3*) EffPDFm ->createHistogram("ctK,ctL,phi");
+  // RooDataHist* Eff = new RooDataHist("Eff","Eff",RooArgList(*z,*y,*p),h3);
+  EffPDF = new RooHistPdf("EffPDF","EffPDF",RooArgSet(*z,*y,*p),EffPDFm->dataHist());
+
+  // RooArgSet* params = EffPDF ->getVariables();
+  // params->setRealValue("ctK",0);
+  return EffPDF;
+}
+
+#endif
 void Utils::ReadAllBins (std::string fileName, std::vector<double>* q2Bins, std::vector<double>* cosThetaKBins, std::vector<double>* cosThetaLBins, std::vector<double>* phiBins, std::string signalType)
 // ##########################
 // # signalType = "goodtag" #
@@ -370,7 +379,7 @@ void Utils::ReadAllBins (std::string fileName, std::vector<double>* q2Bins, std:
       std::cout << "\n@@@ cos(theta_l) bins from file @@@" << std::endl;
       ParVector.clear();
       ParameterFile->ReadFromFile(ParFileBlockN("thetaLmisTag"),&ParVector);
-      for (unsigned int i = 0; i < ParVector.size(); i++)
+      for (unsigned int i = 0; 2*i < ParVector.size(); i++)
 	{
 	  cosThetaLBins->push_back(atof(ParVector[i].c_str()));
 	  std::cout << "Bin " << i << "\t" << cosThetaLBins->back() << std::endl;
@@ -3831,23 +3840,13 @@ unsigned int Utils::ParFileBlockN (std::string blockName)
   else if (blockName == "phimisTag")      return 10;
 
   else if (blockName == "HLTcuts")        return 11;
+  else if (blockName == "fitValBins")     return 12;
 
-  else if (blockName == "fitValGlob")     return 12;
-  else if (blockName == "fitValBins")     return 13;
+  else if (blockName == "fitSyst")        return 13;
 
-  else if (blockName == "I[S*E]okTag")    return 14;
-  else if (blockName == "I[S*E]misTag")   return 15;
-
-  else if (blockName == "BF")             return 16;
-  else if (blockName == "fitSyst")        return 17;
-  else if (blockName == "fitNLL")         return 18;
-
-  else if (blockName == "analyEffokTag")  return 19;
-  else if (blockName == "analyEffmisTag") return 20;
-
-  else if (blockName == "genericpar")     return 21;
-  else if (blockName == "lumi")           return 22;
-  else if (blockName == "dtype")          return 23;
+  else if (blockName == "genericpar")     return 14;
+  else if (blockName == "lumi")           return 15;
+  else if (blockName == "dtype")          return 16;
 
   std::cout << "[Utils::ParFileBlockN]\tError wrong index name : " << blockName << std::endl;
   exit (EXIT_FAILURE);
@@ -3882,59 +3881,58 @@ unsigned int Utils::GetFitParamIndx (std::string varName)
 
   else if (varName == "fracMassBPeak")  return 20;
 
-  else if (varName == "nBkgComb")       return 21;
-  else if (varName == "nMisTagFrac")    return 22;
-  else if (varName == "nBkgPeak")       return 23;
-  else if (varName == "nSig")           return 24;
+  else if (varName == "nMisTagFrac")    return 21;
+  else if (varName == "nBkgPeak")       return 22;
+  else if (varName == "nSig")           return 23;
+  else if (varName == "nPolyP1")        return 24;
+  else if (varName == "p1Poly0")        return 25;
+  else if (varName == "p1Poly1")        return 26;
+  else if (varName == "p1Poly2")        return 27;
+  else if (varName == "p1Poly3")        return 28;
+  else if (varName == "p1Poly4")        return 29;
 
-  else if (varName == "nPolyP1")        return 25;
-  else if (varName == "p1Poly0")        return 26;
-  else if (varName == "p1Poly1")        return 27;
-  else if (varName == "p1Poly2")        return 28;
-  else if (varName == "p1Poly3")        return 29;
-  else if (varName == "p1Poly4")        return 30;
+  else if (varName == "nPolyC1")        return 30;
+  else if (varName == "c1Poly0")        return 31;
+  else if (varName == "c1Poly1")        return 32;
+  else if (varName == "c1Poly2")        return 33;
+  else if (varName == "c1Poly3")        return 34;
+  else if (varName == "c1Poly4")        return 35;
 
-  else if (varName == "nPolyC1")        return 31;
-  else if (varName == "c1Poly0")        return 32;
-  else if (varName == "c1Poly1")        return 33;
-  else if (varName == "c1Poly2")        return 34;
-  else if (varName == "c1Poly3")        return 35;
-  else if (varName == "c1Poly4")        return 36;
+  else if (varName == "nPolyP2")        return 36;
+  else if (varName == "p2Poly0")        return 37;
+  else if (varName == "p2Poly1")        return 38;
+  else if (varName == "p2Poly2")        return 39;
+  else if (varName == "p2Poly3")        return 40;
+  else if (varName == "p2Poly4")        return 41;
 
-  else if (varName == "nPolyP2")        return 37;
-  else if (varName == "p2Poly0")        return 38;
-  else if (varName == "p2Poly1")        return 39;
-  else if (varName == "p2Poly2")        return 40;
-  else if (varName == "p2Poly3")        return 41;
-  else if (varName == "p2Poly4")        return 42;
+  else if (varName == "nPolyC2")        return 42;
+  else if (varName == "c2Poly0")        return 43;
+  else if (varName == "c2Poly1")        return 44;
+  else if (varName == "c2Poly2")        return 45;
+  else if (varName == "c2Poly3")        return 46;
+  else if (varName == "c2Poly4")        return 47;
 
-  else if (varName == "nPolyC2")        return 43;
-  else if (varName == "c2Poly0")        return 44;
-  else if (varName == "c2Poly1")        return 45;
-  else if (varName == "c2Poly2")        return 46;
-  else if (varName == "c2Poly3")        return 47;
-  else if (varName == "c2Poly4")        return 48;
+  else if (varName == "nPolyP3")        return 48;
+  else if (varName == "p3Poly0")        return 49;
+  else if (varName == "p3Poly1")        return 50;
+  else if (varName == "p3Poly2")        return 51;
+  else if (varName == "p3Poly3")        return 52;
+  else if (varName == "p3Poly4")        return 53;
 
-  else if (varName == "nPolyP3")        return 49;
-  else if (varName == "p3Poly0")        return 50;
-  else if (varName == "p3Poly1")        return 51;
-  else if (varName == "p3Poly2")        return 52;
-  else if (varName == "p3Poly3")        return 53;
-  else if (varName == "p3Poly4")        return 54;
+  else if (varName == "nPolyC3")        return 54;
+  else if (varName == "c3Poly0")        return 55;
+  else if (varName == "c3Poly1")        return 56;
+  else if (varName == "c3Poly2")        return 57;
+  else if (varName == "c3Poly3")        return 58;
+  else if (varName == "c3Poly4")        return 59;
 
-  else if (varName == "nPolyC3")        return 55;
-  else if (varName == "c3Poly0")        return 56;
-  else if (varName == "c3Poly1")        return 57;
-  else if (varName == "c3Poly2")        return 58;
-  else if (varName == "c3Poly3")        return 59;
-  else if (varName == "c3Poly4")        return 60;
-
-  else if (varName == "FlS")            return 61;
-  else if (varName == "AfbS")           return 62;
-  else if (varName == "P1S")            return 63;
-  else if (varName == "P2S")            return 64;
-  else if (varName == "FsS")            return 65;
-  else if (varName == "AsS")            return 66;
+  else if (varName == "FlS")            return 60;
+  else if (varName == "P5pS")           return 61;
+  else if (varName == "P1S")            return 62;
+  else if (varName == "P2S")            return 63;
+  else if (varName == "FsS")            return 64;
+  else if (varName == "AsS")            return 65;
+  else if (varName == "As5S")           return 66;
 
   std::cout << "[Utils::GetFitParamIndx]\tError wrong index name : " << varName << std::endl;
   exit (EXIT_FAILURE);
@@ -4452,29 +4450,24 @@ void Utils::ReadGenericParam (std::string fileName)
 
 bool Utils::SetGenericParam (std::string parName, std::string val)
 {
-       if (parName == "NormJPSInotPSIP")     GenericPars[0]  = val;
-  else if (parName == "DegreeInterp")        GenericPars[1]  = val;
-  else if (parName == "TransfTolerance")     GenericPars[2]  = val;
-  else if (parName == "UseMINOS")            GenericPars[3]  = val;
-  else if (parName == "ApplyConstr")         GenericPars[4]  = val;
-  else if (parName == "CtrlFitWrkFlow")      GenericPars[5]  = val;
-  else if (parName == "CtrlMisTagWrkFlow")   GenericPars[6]  = val;
-  else if (parName == "SaveMisTagFrac")      GenericPars[7]  = val;
-  else if (parName == "UseSPwave")           GenericPars[8]  = val;
-  else if (parName == "doTransf")            GenericPars[9]  = val;
-  else if (parName == "B0MassIntervalLeft")  GenericPars[10] = val;
-  else if (parName == "B0MassIntervalRight") GenericPars[11] = val;
-  else if (parName == "NSigmaB0")            GenericPars[12] = val;
-  else if (parName == "NSigmaB0S")           GenericPars[13] = val;
-  else if (parName == "NSigmaB0B")           GenericPars[14] = val;
-  else if (parName == "NSigmaPsi")           GenericPars[15] = val;
-  else if (parName == "B&psiMassJpsiLo")     GenericPars[16] = val;
-  else if (parName == "B&psiMassJpsiHi")     GenericPars[17] = val;
-  else if (parName == "B&psiMassPsiPLo")     GenericPars[18] = val;
-  else if (parName == "B&psiMassPsiPHi")     GenericPars[19] = val;
-  else if (parName == "SIGMAS1")             GenericPars[20] = val;
-  else if (parName == "SIGMAS2")             GenericPars[21] = val;
-  else if (parName == "FRACMASSS")           GenericPars[22] = val;
+   if (parName == "UseMINOS")            GenericPars[0]  = val;
+  else if (parName == "ApplyConstr")         GenericPars[1]  = val;
+  else if (parName == "CtrlFitWrkFlow")      GenericPars[2]  = val;
+  else if (parName == "CtrlMisTagWrkFlow")   GenericPars[3]  = val;
+  else if (parName == "SaveMisTagFrac")      GenericPars[4]  = val;
+  else if (parName == "B0MassIntervalLeft")  GenericPars[5] = val;
+  else if (parName == "B0MassIntervalRight") GenericPars[6] = val;
+  else if (parName == "NSigmaB0")            GenericPars[7] = val;
+  else if (parName == "NSigmaB0S")           GenericPars[8] = val;
+  else if (parName == "NSigmaB0B")           GenericPars[9] = val;
+  else if (parName == "NSigmaPsi")           GenericPars[10] = val;
+  else if (parName == "B&psiMassJpsiLo")     GenericPars[11] = val;
+  else if (parName == "B&psiMassJpsiHi")     GenericPars[12] = val;
+  else if (parName == "B&psiMassPsiPLo")     GenericPars[13] = val;
+  else if (parName == "B&psiMassPsiPHi")     GenericPars[14] = val;
+  else if (parName == "SIGMAS1")             GenericPars[15] = val;
+  else if (parName == "SIGMAS2")             GenericPars[16] = val;
+  else if (parName == "FRACMASSS")           GenericPars[17] = val;
   else return false;
 
   return true;
@@ -4482,29 +4475,24 @@ bool Utils::SetGenericParam (std::string parName, std::string val)
 
 std::string Utils::GetGenericParam (std::string parName)
 {
-       if (parName == "NormJPSInotPSIP")     return GenericPars[0];
-  else if (parName == "DegreeInterp")        return GenericPars[1];
-  else if (parName == "TransfTolerance")     return GenericPars[2];
-  else if (parName == "UseMINOS")            return GenericPars[3];
-  else if (parName == "ApplyConstr")         return GenericPars[4];
-  else if (parName == "CtrlFitWrkFlow")      return GenericPars[5];
-  else if (parName == "CtrlMisTagWrkFlow")   return GenericPars[6];
-  else if (parName == "SaveMisTagFrac")      return GenericPars[7];
-  else if (parName == "UseSPwave")           return GenericPars[8];
-  else if (parName == "doTransf")            return GenericPars[9];
-  else if (parName == "B0MassIntervalLeft")  return GenericPars[10];
-  else if (parName == "B0MassIntervalRight") return GenericPars[11];
-  else if (parName == "NSigmaB0")            return GenericPars[12];
-  else if (parName == "NSigmaB0S")           return GenericPars[13];
-  else if (parName == "NSigmaB0B")           return GenericPars[14];
-  else if (parName == "NSigmaPsi")           return GenericPars[15];
-  else if (parName == "B&psiMassJpsiLo")     return GenericPars[16];
-  else if (parName == "B&psiMassJpsiHi")     return GenericPars[17];
-  else if (parName == "B&psiMassPsiPLo")     return GenericPars[18];
-  else if (parName == "B&psiMassPsiPHi")     return GenericPars[19];
-  else if (parName == "SIGMAS1")             return GenericPars[20];
-  else if (parName == "SIGMAS2")             return GenericPars[21];
-  else if (parName == "FRACMASSS")           return GenericPars[22];
+  if (parName == "UseMINOS")            return GenericPars[0];
+  else if (parName == "ApplyConstr")         return GenericPars[1];
+  else if (parName == "CtrlFitWrkFlow")      return GenericPars[2];
+  else if (parName == "CtrlMisTagWrkFlow")   return GenericPars[3];
+  else if (parName == "SaveMisTagFrac")      return GenericPars[4];
+  else if (parName == "B0MassIntervalLeft")  return GenericPars[5];
+  else if (parName == "B0MassIntervalRight") return GenericPars[6];
+  else if (parName == "NSigmaB0")            return GenericPars[7];
+  else if (parName == "NSigmaB0S")           return GenericPars[8];
+  else if (parName == "NSigmaB0B")           return GenericPars[9];
+  else if (parName == "NSigmaPsi")           return GenericPars[10];
+  else if (parName == "B&psiMassJpsiLo")     return GenericPars[11];
+  else if (parName == "B&psiMassJpsiHi")     return GenericPars[12];
+  else if (parName == "B&psiMassPsiPLo")     return GenericPars[13];
+  else if (parName == "B&psiMassPsiPHi")     return GenericPars[14];
+  else if (parName == "SIGMAS1")             return GenericPars[15];
+  else if (parName == "SIGMAS2")             return GenericPars[16];
+  else if (parName == "FRACMASSS")           return GenericPars[17];
   else
     {
       std::cout << "[Utils::GetGenericParam]\tGeneric parameter not valid : " << parName << std::endl;
