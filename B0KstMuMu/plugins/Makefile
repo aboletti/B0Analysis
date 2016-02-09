@@ -91,6 +91,9 @@ Hist2pdf_sys2: $(SOURCEDIR) $(INCLUDEDIR) Hist2pdf_sys2.cc
 PlotPdf: $(SOURCEDIR) $(INCLUDEDIR) PlotPdf.cc
 	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
 
+GenerateCocktail: $(SOURCEDIR) $(INCLUDEDIR) GenerateCocktail.cc
+	$(CXX) $(CXXFLAGS) -o $@ $(ROOFITFLAGS) $(INCLUDES) $(SOURCES) -D"ROOFIT" $@.cc
+
 LOCALCC := $(wildcard *.cc)
 clean:
 	$(RM) $(LOCALCC:%.cc=%) Macros_C.*
