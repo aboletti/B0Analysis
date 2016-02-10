@@ -130,7 +130,7 @@ void GenerateBkg ( int toyIndx, unsigned int q2BinIndx )
   RooPolynomial phi_pdf("phi_pdf","phi_pdf",phi,RooArgList(phi_p0));
   RooExponential m_pdf("m_pdf","m_pdf",B0mass,mass_c);
 
-  RooProdPdf bkg_pdf("bkg_pdf","bkg_pdf",RooArgSet(ctk_pdf,ctl_pdf,phi_pdf,m_pdf));
+  RooProdPdf bkg_pdf(Form("pdf_bkg%i",q2BinIndx),Form("Background PDF (bin %i)",q2BinIndx),RooArgSet(ctk_pdf,ctl_pdf,phi_pdf,m_pdf));
 
   RooRandom::randomGenerator()->SetSeed(toyIndx+1);
 
@@ -146,6 +146,7 @@ void GenerateBkg ( int toyIndx, unsigned int q2BinIndx )
   
   RooWorkspace* ws = (RooWorkspace*)fout->Get("ws");
   if ( ws==0 ) ws = new RooWorkspace("ws");
+  ws->import(bkg_pdf);
   ws->import(*dataSet);
   ws->Write(0,TObject::kOverwrite);
   
