@@ -23,22 +23,30 @@ void readToyDataset() {
     RooDataSet* all1 = sig1->Clone();
     all1->append(*bkg1);
 
+    RooAbsPdf* pdfb = (RooAbsPdf*)w->pdf(Form("pdf_bkg%d",q2Bin)) ;
+
     RooPlot* B0massFrame = B0mass->frame() ;
     RooPlot* ctLFrame = ctK->frame() ;
     RooPlot* ctKFrame = ctL->frame() ;
     RooPlot* phiFrame = phi->frame() ;
 
-    // // Overlay the background component of model with a dashed line
-    sig1->plotOn(B0massFrame,MarkerStyle(22),MarkerColor(kRed)) ;
-    sig1->plotOn(ctLFrame,MarkerStyle(22),MarkerColor(kRed)) ;
-    sig1->plotOn(ctKFrame,MarkerStyle(22),MarkerColor(kRed)) ;
-    sig1->plotOn(phiFrame,MarkerStyle(22),MarkerColor(kRed)) ;
+    // // Overlay the signal component of model with a dashed line
+    // sig1->plotOn(B0massFrame,MarkerStyle(22),MarkerColor(kRed)) ;
+    // sig1->plotOn(ctLFrame,MarkerStyle(22),MarkerColor(kRed)) ;
+    // sig1->plotOn(ctKFrame,MarkerStyle(22),MarkerColor(kRed)) ;
+    // sig1->plotOn(phiFrame,MarkerStyle(22),MarkerColor(kRed)) ;
 
-    // // Overlay the background+sig2 components of model with a dotted line
+    // Overlay the background components of model with a dotted line
     bkg1->plotOn(B0massFrame,MarkerStyle(23),MarkerColor(kBlue)) ;
     bkg1->plotOn(ctLFrame,MarkerStyle(23),MarkerColor(kBlue)) ;
     bkg1->plotOn(ctKFrame,MarkerStyle(23),MarkerColor(kBlue)) ;
     bkg1->plotOn(phiFrame,MarkerStyle(23),MarkerColor(kBlue)) ;
+
+    // Overlay the background P.D.F.
+    pdfb->plotOn(B0massFrame, LineStyle(kDashed), LineColor(kBlue)) ;
+    pdfb->plotOn(ctLFrame, LineStyle(kDashed), LineColor(kBlue)) ;
+    pdfb->plotOn(ctKFrame, LineStyle(kDashed), LineColor(kBlue)) ;
+    pdfb->plotOn(phiFrame, LineStyle(kDashed), LineColor(kBlue)) ;
 
     // Overlay the background+sig2 components of model with a dotted line
     all1->plotOn(B0massFrame,MarkerStyle(20),MarkerColor(kBlack)) ;
