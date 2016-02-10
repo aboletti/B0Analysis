@@ -111,24 +111,24 @@ void GenerateSig ( int toyIndx, unsigned int q2BinIndx )
 
 void GenerateBkg ( int toyIndx, unsigned int q2BinIndx )
 {
-  RooRealVar ctk_p0("ctk_p0","ctk_p0",coeff_ctk_p0[q2BinIndx-1]);
-  RooRealVar ctk_p1("ctk_p1","ctk_p1",coeff_ctk_p1[q2BinIndx-1]);
-  RooRealVar ctk_p2("ctk_p2","ctk_p2",coeff_ctk_p2[q2BinIndx-1]);
-  RooRealVar ctk_p3("ctk_p3","ctk_p3",coeff_ctk_p3[q2BinIndx-1]);
+  RooRealVar ctk_p0(Form("ctk%i_p0",q2BinIndx),"ctk_p0",coeff_ctk_p0[q2BinIndx-1]);
+  RooRealVar ctk_p1(Form("ctk%i_p1",q2BinIndx),"ctk_p1",coeff_ctk_p1[q2BinIndx-1]);
+  RooRealVar ctk_p2(Form("ctk%i_p2",q2BinIndx),"ctk_p2",coeff_ctk_p2[q2BinIndx-1]);
+  RooRealVar ctk_p3(Form("ctk%i_p3",q2BinIndx),"ctk_p3",coeff_ctk_p3[q2BinIndx-1]);
   
-  RooRealVar ctl_p0("ctl_p0","ctl_p0",0);
-  RooRealVar ctl_p1("ctl_p1","ctl_p1",coeff_ctl_p1[q2BinIndx-1]);
-  RooRealVar ctl_p2("ctl_p2","ctl_p2",0);
-  RooRealVar ctl_p3("ctl_p3","ctl_p3",coeff_ctl_p3[q2BinIndx-1]);
+  RooRealVar ctl_p0(Form("ctl%i_p0",q2BinIndx),"ctl_p0",0);
+  RooRealVar ctl_p1(Form("ctl%i_p1",q2BinIndx),"ctl_p1",coeff_ctl_p1[q2BinIndx-1]);
+  RooRealVar ctl_p2(Form("ctl%i_p2",q2BinIndx),"ctl_p2",0);
+  RooRealVar ctl_p3(Form("ctl%i_p3",q2BinIndx),"ctl_p3",coeff_ctl_p3[q2BinIndx-1]);
   
-  RooRealVar phi_p0("phi_p0","phi_p0",coeff_phi_p0[q2BinIndx-1]);
+  RooRealVar phi_p0(Form("phi%i_p0",q2BinIndx),"phi_p0",coeff_phi_p0[q2BinIndx-1]);
 
-  RooRealVar mass_c("mass_tau","mass_tau",-1./coeff_mass_tau[q2BinIndx-1]);
+  RooRealVar mass_c(Form("mass%i_c",q2BinIndx),"mass_c",-1./coeff_mass_tau[q2BinIndx-1]);
 
-  RooPolynomial ctk_pdf("ctk_pdf","ctk_pdf",ctK,RooArgList(ctk_p0,ctk_p1,ctk_p2,ctk_p3));
-  RooPolynomial ctl_pdf("ctl_pdf","ctl_pdf",ctL,RooArgList(ctl_p0,ctl_p1,ctl_p2,ctl_p3));
-  RooPolynomial phi_pdf("phi_pdf","phi_pdf",phi,RooArgList(phi_p0));
-  RooExponential m_pdf("m_pdf","m_pdf",B0mass,mass_c);
+  RooPolynomial ctk_pdf(Form("ctk_pdf%i",q2BinIndx),"ctk_pdf",ctK,RooArgList(ctk_p0,ctk_p1,ctk_p2,ctk_p3));
+  RooPolynomial ctl_pdf(Form("ctl_pdf%i",q2BinIndx),"ctl_pdf",ctL,RooArgList(ctl_p0,ctl_p1,ctl_p2,ctl_p3));
+  RooPolynomial phi_pdf(Form("phi_pdf%i",q2BinIndx),"phi_pdf",phi,RooArgList(phi_p0));
+  RooExponential m_pdf(Form("m_pdf%i",q2BinIndx),"m_pdf",B0mass,mass_c);
 
   RooProdPdf bkg_pdf(Form("pdf_bkg%i",q2BinIndx),Form("Background PDF (bin %i)",q2BinIndx),RooArgSet(ctk_pdf,ctl_pdf,phi_pdf,m_pdf));
 
