@@ -159,7 +159,7 @@ int main(int argc, char** argv)
 {
   if (argc > 0)
   {
-    int toyIndx=0;
+    int toyIndx=1;
     int q2BinIndx=0;
     int samp=0;
     if ( argc > 1 ) toyIndx = atoi(argv[1]);
@@ -169,45 +169,47 @@ int main(int argc, char** argv)
     Utility = new Utils(false);
     loadBinning();
 
-    if (toyIndx<0) {
+    if (toyIndx<=0) {
       cout<<"toy index must be greater than 0. FAILURE!"<<endl;
       return EXIT_FAILURE;
     }
 
-    // do all q2Bins at once
-    if (q2BinIndx==0)
-      for (q2BinIndx=1; q2BinIndx<10; ++q2BinIndx) {
-	if (q2BinIndx==5 || q2BinIndx==7) continue;
+    for (int iToy=0; iToy<toyIndx; iToy++) {
+      // do all q2Bins at once
+      if (q2BinIndx==0)
+	for (q2BinIndx=1; q2BinIndx<10; ++q2BinIndx) {
+	  if (q2BinIndx==5 || q2BinIndx==7) continue;
+	  if (samp==0) {
+	    GenerateSig(iToy, q2BinIndx);
+	    GenerateBkg(iToy, q2BinIndx);
+	  }
+	  else if (samp==1)
+	    GenerateSig(iToy, q2BinIndx);
+	  else if (samp==2)
+	    GenerateBkg(iToy, q2BinIndx);
+	  else {
+	    cout<<"Sample Index must be 1:sig, 2:bkg or 0:all"<<endl;
+	    return EXIT_FAILURE;
+	  }
+	}
+      else if (q2BinIndx>0 && q2BinIndx<10 && q2BinIndx!=5 && q2BinIndx!=7) {
         if (samp==0) {
-	  GenerateSig(toyIndx, q2BinIndx);
-	  GenerateBkg(toyIndx, q2BinIndx);
+	  GenerateSig(iToy, q2BinIndx);
+	  GenerateBkg(iToy, q2BinIndx);
 	}
 	else if (samp==1)
-	  GenerateSig(toyIndx, q2BinIndx);
+	  GenerateSig(iToy, q2BinIndx);
 	else if (samp==2)
-	  GenerateBkg(toyIndx, q2BinIndx);
+	  GenerateBkg(iToy, q2BinIndx);
 	else {
 	  cout<<"Sample Index must be 1:sig, 2:bkg or 0:all"<<endl;
 	  return EXIT_FAILURE;
 	}
       }
-    else if (q2BinIndx>0 && q2BinIndx<10 && q2BinIndx!=5 && q2BinIndx!=7) {
-        if (samp==0) {
-	  GenerateSig(toyIndx, q2BinIndx);
-	  GenerateBkg(toyIndx, q2BinIndx);
-	}
-	else if (samp==1)
-	  GenerateSig(toyIndx, q2BinIndx);
-	else if (samp==2)
-	  GenerateBkg(toyIndx, q2BinIndx);
-	else {
-	  cout<<"Sample Index must be 1:sig, 2:bkg or 0:all"<<endl;
-	  return EXIT_FAILURE;
-	}
-    }
-    else {
-      cout<<"q2Bin must be greater than 0 and smaller than 10 and no 5 nor 7. FAILURE!"<<endl;
-      return EXIT_FAILURE;
+      else {
+	cout<<"q2Bin must be greater than 0 and smaller than 10 and no 5 nor 7. FAILURE!"<<endl;
+	return EXIT_FAILURE;
+      }
     }
 
     return EXIT_SUCCESS;
