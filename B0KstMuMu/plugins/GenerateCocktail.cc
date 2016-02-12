@@ -20,6 +20,7 @@ using namespace RooFit ;
 Utils* Utility;
 
 string fileNameOutput = "toyDatasets.root";
+string fileNameInput = "dcap://t2-srm-02.lnl.infn.it//pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/SingleCand/singleCand_B0ToKstMuMu_MC_NTuple.root";
 
 float coeff_ctl_p1[9] = {-0.94024, -0.999251, -0.746712, 1.31074, 0, 1.53294, 0, 1.3881, 0.283786};
 float coeff_ctl_p3[9] = {0, 0, 0, -2.11336, 0, -1.82117, 0, -1.535, 0};
@@ -43,6 +44,12 @@ int sigYield[9] = {84,145,119,225,0,361,0,222,239};
 int bkgYield[9] = {91,289,216,343,0,567,0,178,82};
 
 vector<double> q2Bins;
+int processed[9] = {0,0,0,0,0,0,0,0,0};
+
+TFile* NtplFileIn;
+TTree* theTreeIn;
+B0KstMuMuSingleCandTreeContent* NTupleIn;
+int nEntries;
 
 void loadBinning() {
   Utility->Readq2Bins(Utility->MakeAnalysisPATH(PARAMETERFILEIN).c_str(),&q2Bins);
@@ -50,34 +57,18 @@ void loadBinning() {
 
 void GenerateSig ( int toyIndx, unsigned int q2BinIndx )
 {
-  TFile* NtplFileIn = TFile::Open("dcap://t2-srm-02.lnl.infn.it//pnfs/lnl.infn.it/data/cms/store/user/slacapra/B0KsMuMu/Data2012B0KstMuMuResults/MonteCarlo2012/SingleCand/singleCand_B0ToKstMuMu_MC_NTuple.root", "READ");
-  TTree* theTreeIn  = (TTree*) NtplFileIn->Get("B0KstMuMu/B0KstMuMuNTuple");
-  B0KstMuMuSingleCandTreeContent* NTupleIn = new B0KstMuMuSingleCandTreeContent();
-  NTupleIn->Init();
-  NTupleIn->ClearNTuple();
-  NTupleIn->SetBranchAddresses(theTreeIn);
-  int nEntries = theTreeIn->GetEntries();
-
   //RooDataSet* dataSe  = new RooDataSet("a","a",RooArgSet(ctK));
   RooDataSet* dataSet = new RooDataSet(Form("toy%i_sig%i",toyIndx,q2BinIndx), Form("Signal dataset for toy %i (bin %i)",toyIndx,q2BinIndx), RooArgSet(ctK,ctL,phi,B0mass));
 
   int cntPart = 0;
-  int evPart = 0;
   bool filled = false;
-  for (int entry = 0; entry < nEntries; entry++) {
-    theTreeIn->GetEntry(entry);
+  for ( ; cntPart < sigYield[q2BinIndx-1]; processed[q2BinIndx-1]++) {
+    theTreeIn->GetEntry(processed[q2BinIndx-1]);
 
     double mumuq2 = NTupleIn->mumuMass->at(0)*NTupleIn->mumuMass->at(0);
     if (mumuq2 < q2Bins[q2BinIndx-1] || mumuq2 > q2Bins[q2BinIndx]) continue;
 
     cntPart++;
-    if (cntPart > sigYield[q2BinIndx-1]) {
-      cntPart = 1;
-      evPart++;
-    }      
-
-    if ( evPart < toyIndx ) continue;
-    if ( evPart > toyIndx ) break;
 
     if (NTupleIn->rightFlavorTag == false) ctK.setVal( - NTupleIn->CosThetaKArb );
     else ctK.setVal( NTupleIn->CosThetaKArb );
@@ -88,7 +79,10 @@ void GenerateSig ( int toyIndx, unsigned int q2BinIndx )
 
     dataSet->add(RooArgSet(ctK,ctL,phi,B0mass));
 
-    if (cntPart == sigYield[q2BinIndx-1]) filled = true;
+    if (cntPart == sigYield[q2BinIndx-1]) {
+      filled = true;
+      cout<<"Bin "<<q2BinIndx<<" toy "<<toyIndx<<" - "<<processed[q2BinIndx-1]<<endl;
+    }
   }
 
   if (!filled) return;
@@ -107,6 +101,9 @@ void GenerateSig ( int toyIndx, unsigned int q2BinIndx )
   fout->Close();
   delete fout;
   delete dataSet;
+  delete ws;
+
+  return;
 }
 
 void GenerateBkg ( int toyIndx, unsigned int q2BinIndx )
@@ -146,13 +143,16 @@ void GenerateBkg ( int toyIndx, unsigned int q2BinIndx )
   
   RooWorkspace* ws = (RooWorkspace*)fout->Get("ws");
   if ( ws==0 ) ws = new RooWorkspace("ws");
-  ws->import(bkg_pdf);
+  if ( toyIndx==0 ) ws->import(bkg_pdf);
   ws->import(*dataSet);
   ws->Write(0,TObject::kOverwrite);
   
   fout->Close();
   delete fout;
   delete dataSet;
+  delete ws;
+
+  return;
 }
 
 int main(int argc, char** argv)
@@ -160,14 +160,22 @@ int main(int argc, char** argv)
   if (argc > 0)
   {
     int toyIndx=1;
-    int q2BinIndx=0;
+    int q2Bin=0;
     int samp=0;
     if ( argc > 1 ) toyIndx = atoi(argv[1]);
-    if ( argc > 2 ) q2BinIndx = atoi(argv[2]);
+    if ( argc > 2 ) q2Bin = atoi(argv[2]);
     if ( argc > 3 ) samp = atoi(argv[3]);
 
     Utility = new Utils(false);
     loadBinning();
+
+    NtplFileIn = TFile::Open(fileNameInput.c_str());
+    theTreeIn  = (TTree*) NtplFileIn->Get("B0KstMuMu/B0KstMuMuNTuple");
+    NTupleIn = new B0KstMuMuSingleCandTreeContent();
+    NTupleIn->Init();
+    NTupleIn->ClearNTuple();
+    NTupleIn->SetBranchAddresses(theTreeIn);
+    nEntries = theTreeIn->GetEntries();
 
     if (toyIndx<=0) {
       cout<<"toy index must be greater than 0. FAILURE!"<<endl;
@@ -176,8 +184,8 @@ int main(int argc, char** argv)
 
     for (int iToy=0; iToy<toyIndx; iToy++) {
       // do all q2Bins at once
-      if (q2BinIndx==0)
-	for (q2BinIndx=1; q2BinIndx<10; ++q2BinIndx) {
+      if (q2Bin==0)
+	for (int q2BinIndx=1; q2BinIndx<10; ++q2BinIndx) {
 	  if (q2BinIndx==5 || q2BinIndx==7) continue;
 	  if (samp==0) {
 	    GenerateSig(iToy, q2BinIndx);
@@ -192,15 +200,15 @@ int main(int argc, char** argv)
 	    return EXIT_FAILURE;
 	  }
 	}
-      else if (q2BinIndx>0 && q2BinIndx<10 && q2BinIndx!=5 && q2BinIndx!=7) {
+      else if (q2Bin>0 && q2Bin<10 && q2Bin!=5 && q2Bin!=7) {
         if (samp==0) {
-	  GenerateSig(iToy, q2BinIndx);
-	  GenerateBkg(iToy, q2BinIndx);
+	  GenerateSig(iToy, q2Bin);
+	  GenerateBkg(iToy, q2Bin);
 	}
 	else if (samp==1)
-	  GenerateSig(iToy, q2BinIndx);
+	  GenerateSig(iToy, q2Bin);
 	else if (samp==2)
-	  GenerateBkg(iToy, q2BinIndx);
+	  GenerateBkg(iToy, q2Bin);
 	else {
 	  cout<<"Sample Index must be 1:sig, 2:bkg or 0:all"<<endl;
 	  return EXIT_FAILURE;
