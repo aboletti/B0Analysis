@@ -127,6 +127,7 @@ ofstream fileFitSystematics;
 
 double* q2BinsHisto;
 
+bool useToyDataset;
 
 // ####################################
 // # Useful variables from the NTuple #
@@ -336,6 +337,7 @@ unsigned int CopyFitResults     (RooAbsPdf* pdf, unsigned int q2BinIndx, vector<
 
 string GeneratePolynomial       (RooRealVar* var, unsigned int nCoef, string sCoef);
 
+void LoadDatasets               (TFile* NtplFile, int specBin);
 void MakeDatasets               (B0KstMuMuSingleCandTreeContent* NTuple, unsigned int FitType);
 
 //###############
@@ -796,13 +798,13 @@ RooAbsPdf* MakeAngWithEffPDF (unsigned int q2BinIndx, RooRealVar* y, RooRealVar*
     // #####################################
     FlS  = new RooRealVar("FlS","F_{L}",0.5,0.0,1.0);
     P5pS = new RooRealVar("P5pS","P_{5p}",0.5,-1.0,1.);
-    P1S = new RooRealVar("P1S","P_{1}",0.0,-1.0,1.);    
+    P1S = new RooRealVar("P1S","P_{1}",0.0,-1.0,1.);
     VarsAng->add(*FlS);
     VarsAng->add(*P5pS);
-    VarsAng->add(*P1S);          
+    VarsAng->add(*P1S);
     VarsAng->add(*y);
     VarsAng->add(*z);
-    VarsAng->add(*p);     
+    VarsAng->add(*p);
 
     myString.clear(); myString.str("");
     if (atoi(Utility->GetGenericParam("UseSPwave").c_str()) == false)
@@ -1090,7 +1092,7 @@ unsigned int CopyFitResults (RooAbsPdf* pdf, unsigned int q2BinIndx, vector<vect
       myString.clear(); myString.str("");
       myString << fitParam->operator[](Utility->GetFitParamIndx("nMisTagFrac"))->operator[](q2BinIndx).c_str();
       SetValueAndErrors(pdf,"nMisTagFrac",1.0,&myString,&value,&errLo,&errHi);
-      GetVar(pdf,"nMisTagFrac")->setConstant(false); 
+      GetVar(pdf,"nMisTagFrac")->setConstant(true); 
     }
     else
     {
@@ -1307,6 +1309,27 @@ string GeneratePolynomial (RooRealVar* var, unsigned int nCoef, string sCoef)
   return myString.str();
 }
 
+void LoadDatasets (TFile* NtplFile, int specBin)
+{
+  RooWorkspace* w = (RooWorkspace*)NtplFile->Get("ws");
+  SingleCandNTuple_RejectPsi = SingleCandNTuple = (RooDataSet*)w->data(Form("toy0_sig%i",specBin+1));
+
+  // ###########################
+  // # Define useful variables #
+  // ###########################
+  B0MassArb = w->var("B0mass");
+  ctK       = w->var("ctK");
+  ctL       = w->var("ctL");
+  phi       = w->var("phi");
+
+  // ####################################################
+  // # Setting initial values for independent variables #
+  // ####################################################
+  B0MassArb->setVal(Utility->B0Mass);
+  ctK ->setVal(0.0);
+  ctL->setVal(0.0);
+  phi->setVal(0.0);
+}
 
 
 void MakeDatasets (B0KstMuMuSingleCandTreeContent* NTuple, unsigned int FitType)
@@ -1808,10 +1831,14 @@ void Iterative3AnglesFitq2Bins (RooDataSet* dataSet,
   {
     myString.clear(); myString.str("");
     myString << "(mumuMass*mumuMass) > " << q2Bins->operator[](i) << " && (mumuMass*mumuMass) <= " << q2Bins->operator[](i+1);
-    cout << "\n[ExtractYield::IterativeAnglesFitq2Bins]\tCut string: " << myString.str() << endl;
-    dataSet_q2Bins[i] = (RooDataSet*)dataSet->reduce(myString.str().c_str());
+    if (!useToyDataset) {
+      cout << "\n[ExtractYield::IterativeAnglesFitq2Bins]\tCut string: " << myString.str() << endl;
+      dataSet_q2Bins[i] = (RooDataSet*)dataSet->reduce(myString.str().c_str());
+    } else {
+      dataSet_q2Bins[i] = (RooDataSet*)dataSet;
+    }
     cout << "[ExtractYield::IterativeAnglesFitq2Bins]\tNumber of events : " << dataSet_q2Bins[i]->sumEntries() << endl;
-
+    
     if ((FitType == 206))
     {
       TCanvas*    Gen[q2Bins->size()-1];
@@ -1851,7 +1878,7 @@ void Iterative3AnglesFitq2Bins (RooDataSet* dataSet,
       unsigned int countGoodTag = 0;
       for (int j = 0; j < static_cast<int>(dataSet_q2Bins[i]->sumEntries()); j++)
       {
-        if (dataSet_q2Bins[i]->get(j)->getRealValue("truthMatchSignal") == true)
+        if (!useToyDataset && dataSet_q2Bins[i]->get(j)->getRealValue("truthMatchSignal") == true)
         {
           if (dataSet_q2Bins[i]->get(j)->getRealValue("rightFlavorTag") == 0.0) countMisTag++;
           else                                                                  countGoodTag++;
@@ -1881,9 +1908,9 @@ void Iterative3AnglesFitq2Bins (RooDataSet* dataSet,
       else
         cout << "\n[ExtractYield::Iterative3AnglesFitq2Bins]\t@@@ Fit didn't converge ! @@@" << endl;
     }
-
+    
     // Open new ROOT file save save result 
-    TFile f("Fitresult.root","UPDATE") ;
+    TFile f("Fitresult1.root","UPDATE") ;
     f.cd();
     if (fitResult /*&& CheckGoodFit(fitResult) == true*/) fitResult->Write(Form("fitResult_Bin%d",i)) ;
     f.Close() ;
@@ -2640,6 +2667,13 @@ int main(int argc, char** argv)
 
     TFile* NtplFile           = NULL;
 
+    useToyDataset        = false;
+
+    if (FitType == 116)
+    {
+      FitType = 106;
+      useToyDataset = true;
+    }
 
     if (((FitType == 1) ||(FitType == 6) || (FitType == 106) || (FitType== 206)) && (argc >= 4))
 
@@ -2790,17 +2824,24 @@ int main(int argc, char** argv)
           (FitType == 206))
       {
         NtplFile = TFile::Open(fileName.c_str(),"READ");
-        theTree  = (TTree*) NtplFile->Get("B0KstMuMu/B0KstMuMuNTuple");
-        NTuple   = new B0KstMuMuSingleCandTreeContent();
-        NTuple->Init();
 
-
-        // #################
-        // # Make datasets #
-        // #################
-        cout << "\n[ExtractYield::main]\t@@@ Making datasets @@@" << endl;
-        MakeDatasets(NTuple,FitType);
-
+	if (useToyDataset)
+	{
+	  // #################
+	  // # Load datasets #
+	  // #################
+	  LoadDatasets(NtplFile, specBin);
+	} else {
+	  // #################
+	  // # Make datasets #
+	  // #################
+	  theTree  = (TTree*) NtplFile->Get("B0KstMuMu/B0KstMuMuNTuple");
+	  NTuple   = new B0KstMuMuSingleCandTreeContent();
+	  NTuple->Init();
+	  
+	  cout << "\n[ExtractYield::main]\t@@@ Making datasets @@@" << endl;
+	  MakeDatasets(NTuple,FitType);
+	}
 
         // ##############################
         // # Select the proper fit type #
