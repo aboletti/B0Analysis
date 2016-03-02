@@ -30,6 +30,32 @@ RooRealVar ctL("ctL","cos#theta_{L}",0,1);
 RooRealVar phi("phi","#phi",0,TMath::Pi());
 RooArgList ctKctLphi(ctK,ctL,phi);
 
+TH3* invertYAxis(const TH3* h3in) {
+  // clone the TH3
+  TH3* h3out=(TH3*)h3in->Clone();
+  // reset it
+  h3out->Reset();
+  // loop over x axis
+  for (int ix=0; ix!=h3in->GetXaxis()->GetNbins()+1;++ix) {
+    // loop over y axis
+    int ix_inv=h3in->GetXaxis()->GetNbins()+1-ix;
+    for (int iy=0; iy!=h3in->GetYaxis()->GetNbins()+1;++iy) {
+      // loop over z axis
+      for (int iz=0; iz!=h3in->GetZaxis()->GetNbins()+1;++iz) {
+        //cout << ix << ":" << iy << ":" << iz << " = " << h3in->GetBinContent(ix,iy,iz) << endl;
+        // now invert the y bin
+        // fill xyz 
+        h3out->SetBinContent(ix_inv,iy,iz,h3in->GetBinContent(ix,iy,iz));
+        // fill xyz errors
+        h3out->SetBinError(ix_inv,iy,iz,h3in->GetBinError(ix,iy,iz));
+      }
+    }
+  }
+  // return it
+  return h3out;
+
+}
+
 void Convert (int q2BinIndx, string exe, bool mist=0) {
 
   sample_str = "";
@@ -54,10 +80,15 @@ void Convert (int q2BinIndx, string exe, bool mist=0) {
 
       TFile* fout = new TFile(fileNameOutput.c_str(), "UPDATE");
 
-      TH3* h3genEff = (TH3*)h3genNum->Clone("h3genEff");
-      h3genEff->Divide(h3genDen);
-      TH3* h3recoEff = (TH3*)h3recoNum->Clone("h3recoEff");
-      h3recoEff->Divide(h3recoDen);
+      TH3* h3genNumInv= invertYAxis(h3genNum);
+      TH3* h3genDenInv= invertYAxis(h3genDen);
+      TH3* h3recoNumInv= invertYAxis(h3recoNum);
+      TH3* h3recoDenInv= invertYAxis(h3recoDen);
+
+      TH3* h3genEff = (TH3*)h3genNumInv->Clone("h3genEff");
+      h3genEff->Divide(h3genDenInv);
+      TH3* h3recoEff = (TH3*)h3recoNumInv->Clone("h3recoEff");
+      h3recoEff->Divide(h3recoDenInv);
 
       TH3* h3eff = (TH3*)h3genEff->Clone("h3eff");
       h3eff->Multiply(h3recoEff);
